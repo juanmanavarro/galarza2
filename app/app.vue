@@ -1,9 +1,19 @@
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
+const numeroMaquinas = ref(1);
 const puntoAlimentacion = ref("extremo");
 const condicionesAmbientales = ref("");
 const tipoRecorrido = ref("Línea recta");
+const maximaPotenciaTipo = ref("simultanea");
+
+const gruasCount = computed(() => {
+  const value = Number(numeroMaquinas.value);
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+  return Math.min(4, Math.max(1, Math.floor(value)));
+});
 
 const errors = ref({});
 
@@ -66,10 +76,10 @@ const handleInputValidation = (event) => {
     <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-2 mx-64">
       <div class="flex h-full gap-8">
         <section class="flex-1 h-full overflow-y-auto pr-2">
-          <form class="max-w-xl space-y-8" @input="handleInputValidation" @change="handleInputValidation">
+          <form class="max-w-4xl space-y-8" @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
-                1. Tipo de aplicación / industria donde la línea eléctrica va a ser instalada
+                Tipo de aplicación / industria donde la línea eléctrica va a ser instalada
               </h2>
               <input
                 id="tipoAplicacion"
@@ -85,7 +95,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">2. Número de máquinas a alimentar</h2>
+              <h2 class="text-base font-semibold">Número de máquinas a alimentar</h2>
               <input
                 id="numeroMaquinas"
                 name="number_and_type_of_machines_to_feed"
@@ -94,7 +104,7 @@ const handleInputValidation = (event) => {
                 max="4"
                 step="1"
                 class="input input-bordered w-full"
-                value="1"
+                v-model.number="numeroMaquinas"
                 required
               />
               <p v-if="errors.number_and_type_of_machines_to_feed" class="text-sm text-error">
@@ -103,7 +113,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">3. Tipo de conductores a usar</h2>
+              <h2 class="text-base font-semibold">Tipo de conductores a usar</h2>
               <div class="space-y-2">
                 <label class="flex items-center gap-3">
                   <input
@@ -153,7 +163,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">4. Número de polos requerido</h2>
+              <h2 class="text-base font-semibold">Número de polos requerido</h2>
               <div class="grid gap-4 sm:grid-cols-3">
                 <div class="space-y-2">
                   <label class="label-text" for="polosFases">Fases</label>
@@ -198,7 +208,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">5. Recorrido total</h2>
+              <h2 class="text-base font-semibold">Recorrido total</h2>
               <div class="join w-full">
                 <input
                   id="recorridoTotal"
@@ -436,7 +446,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">6. Ambiente de trabajo</h2>
+              <h2 class="text-base font-semibold">Ambiente de trabajo</h2>
               <label class="flex items-center gap-3">
                 <input
                   type="radio"
@@ -462,7 +472,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">7. Posición del punto de alimentación</h2>
+              <h2 class="text-base font-semibold">Posición del punto de alimentación</h2>
               <label class="flex items-center gap-3">
                 <input
                   v-model="puntoAlimentacion"
@@ -513,7 +523,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">8. Condiciones ambientales</h2>
+              <h2 class="text-base font-semibold">Condiciones ambientales</h2>
               <label class="flex items-center gap-3">
                 <input
                   v-model="condicionesAmbientales"
@@ -571,7 +581,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">9. Línea protegida con goma de cierre</h2>
+              <h2 class="text-base font-semibold">Línea protegida con goma de cierre</h2>
               <label class="flex items-center gap-3">
                 <input
                   type="radio"
@@ -597,7 +607,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">10. Temperatura de trabajo</h2>
+              <h2 class="text-base font-semibold">Temperatura de trabajo</h2>
               <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
                   <span class="label-text">°C mínimos</span>
@@ -611,7 +621,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">11. Voltaje</h2>
+              <h2 class="text-base font-semibold">Voltaje</h2>
               <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
                   <span class="label-text">Voltaje</span>
@@ -627,7 +637,7 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">12. Máxima caída de tensión permitida</h2>
+              <h2 class="text-base font-semibold">Máxima caída de tensión permitida</h2>
               <div class="space-y-2">
                 <span class="label-text">Máxima caída de tensión permitida</span>
                 <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
@@ -636,7 +646,31 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">13. Máxima potencia por máquina</h2>
+              <h2 class="text-base font-semibold">Máxima potencia</h2>
+              <label class="flex items-center gap-3">
+                <input
+                  v-model="maximaPotenciaTipo"
+                  type="radio"
+                  name="maxima_potencia_tipo"
+                  value="simultanea"
+                  class="radio radio-primary"
+                />
+                <span>Simultanea</span>
+              </label>
+              <label class="flex items-center gap-3">
+                <input
+                  v-model="maximaPotenciaTipo"
+                  type="radio"
+                  name="maxima_potencia_tipo"
+                  value="por_grua"
+                  class="radio radio-primary"
+                />
+                <span>Por grúa</span>
+              </label>
+            </div>
+
+            <div v-if="maximaPotenciaTipo === 'simultanea'" class="space-y-3">
+              <h2 class="text-base font-semibold">Máxima potencia por máquina</h2>
               <div class="space-y-3">
                 <div class="space-y-2">
                   <span class="label-text">Potencia en caballos</span>
@@ -653,6 +687,112 @@ const handleInputValidation = (event) => {
                   <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
                   <p class="text-xs text-base-content/60">Amp. (nom)</p>
                 </div>
+              </div>
+            </div>
+
+            <div v-else class="space-y-6">
+              <div
+                v-for="index in gruasCount"
+                :key="index"
+                class="rounded-md border border-base-300 bg-base-200/40 p-4"
+              >
+                <h3 class="text-base font-semibold">Grúa {{ index }}</h3>
+                <div class="overflow-x-auto">
+                  <table class="table w-full">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Servicio</th>
+                        <th class="text-left">CV</th>
+                        <th class="text-left">Kw</th>
+                        <th class="text-left">Amp</th>
+                        <th class="text-left">%ED</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Elevación principal</td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                      </tr>
+                      <tr>
+                        <td>Elevación auxiliar</td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                      </tr>
+                      <tr>
+                        <td>Traslación grúa</td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                      </tr>
+                      <tr>
+                        <td>Traslación carro</td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                      </tr>
+                      <tr>
+                        <td>Otros servicios</td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div class="space-y-2">
+                    <span class="label-text">Tomacorrientes</span>
+                    <input type="text" class="input input-bordered w-full" value="sin ítem" />
+                  </div>
+                  <div class="space-y-2">
+                    <span class="label-text">Brazo arrastre</span>
+                    <input type="text" class="input input-bordered w-full" value="sin ítem" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="text-base font-semibold">Suministrar brazos soporte</h2>
+              <label class="flex items-center gap-3">
+                <input type="radio" name="suministrar_brazos_soporte" class="radio radio-primary" checked required />
+                <span>No</span>
+              </label>
+              <label class="flex items-center gap-3">
+                <input type="radio" name="suministrar_brazos_soporte" class="radio radio-primary" />
+                <span>Sí</span>
+              </label>
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="text-base font-semibold">
+                Para líneas con embudos o zonas seccionadas, remitir un croquis
+              </h2>
+              <div class="max-w-sm space-y-2">
+                <label class="label-text" for="fileInputLabel">
+                  Para líneas con embudos o zonas seccionadas por favor remitir un croquis
+                </label>
+                <input type="file" class="input" id="fileInputLabel" />
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="text-base font-semibold">
+                Información adicional que podría ser importante para la selección de la línea
+              </h2>
+              <div class="space-y-2">
+                <span class="label-text">
+                  Información adicional que podría ser importante para la selección de la línea
+                </span>
+                <textarea class="textarea textarea-bordered w-full" rows="4"></textarea>
               </div>
             </div>
           </form>
