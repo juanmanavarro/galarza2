@@ -80,6 +80,7 @@ const handleInputValidation = (event) => {
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
                 Tipo de aplicación / industria donde la línea eléctrica va a ser instalada
+                <span class="text-error"> *</span>
               </h2>
               <input
                 id="tipoAplicacion"
@@ -95,7 +96,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Número de máquinas a alimentar</h2>
+              <h2 class="text-base font-semibold">
+                Número de máquinas a alimentar
+                <span class="text-error"> *</span>
+              </h2>
               <input
                 id="numeroMaquinas"
                 name="number_and_type_of_machines_to_feed"
@@ -113,7 +117,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Tipo de conductores a usar</h2>
+              <h2 class="text-base font-semibold">
+                Tipo de conductores a usar
+                <span class="text-error"> *</span>
+              </h2>
               <div class="space-y-2">
                 <label class="flex items-center gap-3">
                   <input
@@ -163,10 +170,16 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Número de polos requerido</h2>
+              <h2 class="text-base font-semibold">
+                Número de polos requerido
+                <span class="text-error"> *</span>
+              </h2>
               <div class="grid gap-4 sm:grid-cols-3">
                 <div class="space-y-2">
-                  <label class="label-text" for="polosFases">Fases</label>
+                  <label class="label-text" for="polosFases">
+                    Fases
+                    <span class="text-error"> *</span>
+                  </label>
                   <input
                     id="polosFases"
                     name="fase"
@@ -179,7 +192,10 @@ const handleInputValidation = (event) => {
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="label-text" for="polosTierra">Tierra</label>
+                  <label class="label-text" for="polosTierra">
+                    Tierra
+                    <span class="text-error"> *</span>
+                  </label>
                   <input
                     id="polosTierra"
                     name="ground"
@@ -192,7 +208,10 @@ const handleInputValidation = (event) => {
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="label-text" for="polosNeutro">Neutro</label>
+                  <label class="label-text" for="polosNeutro">
+                    Neutro
+                    <span class="text-error"> *</span>
+                  </label>
                   <input
                     id="polosNeutro"
                     name="neutral"
@@ -208,7 +227,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Recorrido total</h2>
+              <h2 class="text-base font-semibold">
+                Recorrido total
+                <span class="text-error"> *</span>
+              </h2>
               <div class="join w-full">
                 <input
                   id="recorridoTotal"
@@ -247,6 +269,10 @@ const handleInputValidation = (event) => {
                   />
                   <span>Línea curva</span>
                 </label>
+                <p class="label-text">
+                  Tipo de recorrido
+                  <span class="text-error"> *</span>
+                </p>
                 <p v-if="errors.type_of_line" class="text-sm text-error">
                   {{ errors.type_of_line }}
                 </p>
@@ -446,7 +472,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Ambiente de trabajo</h2>
+              <h2 class="text-base font-semibold">
+                Ambiente de trabajo
+                <span class="text-error"> *</span>
+              </h2>
               <label class="flex items-center gap-3">
                 <input
                   type="radio"
@@ -472,7 +501,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Posición del punto de alimentación</h2>
+              <h2 class="text-base font-semibold">
+                Posición del punto de alimentación
+                <span class="text-error"> *</span>
+              </h2>
               <label class="flex items-center gap-3">
                 <input
                   v-model="puntoAlimentacion"
@@ -523,7 +555,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Condiciones ambientales</h2>
+              <h2 class="text-base font-semibold">
+                Condiciones ambientales
+                <span class="text-error"> *</span>
+              </h2>
               <label class="flex items-center gap-3">
                 <input
                   v-model="condicionesAmbientales"
@@ -581,7 +616,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Línea protegida con goma de cierre</h2>
+              <h2 class="text-base font-semibold">
+                Línea protegida con goma de cierre
+                <span class="text-error"> *</span>
+              </h2>
               <label class="flex items-center gap-3">
                 <input
                   type="radio"
@@ -761,7 +799,10 @@ const handleInputValidation = (event) => {
             </div>
 
             <div class="space-y-3">
-              <h2 class="text-base font-semibold">Suministrar brazos soporte</h2>
+              <h2 class="text-base font-semibold">
+                Suministrar brazos soporte
+                <span class="text-error"> *</span>
+              </h2>
               <label class="flex items-center gap-3">
                 <input type="radio" name="suministrar_brazos_soporte" class="radio radio-primary" checked required />
                 <span>No</span>
