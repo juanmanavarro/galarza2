@@ -21,7 +21,7 @@ const formState = reactive({
     { tramo_recto: null, radio: null, angulo: null, longitud: null },
   ],
   work_environment: "",
-  feeding_point_position: "extreme",
+  feeding_point_position: "",
   feeding_point_position_distance: null,
   environmental_condition: "",
   environmental_condition_corrosive: "",
@@ -198,9 +198,9 @@ const handleInputValidation = (event) => {
       </div>
     </header>
 
-    <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-2 mx-0">
+    <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-2 mx-auto max-w-[1500px]">
       <div class="flex h-full gap-8">
-        <section class="flex-none h-full w-full max-w-4xl overflow-y-auto pr-2">
+        <section class="flex-1 h-full overflow-y-auto pr-2">
           <form class="w-full space-y-8" @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
@@ -1295,12 +1295,12 @@ const handleInputValidation = (event) => {
             </div>
           </form>
         </section>
-        <aside class="flex-1 h-full">
-          <div class="card bg-base-200 shadow-sm sticky top-4 w-full">
+        <aside class="flex-1 h-full overflow-y-auto pr-2">
+          <div class="card bg-base-200 shadow-sm w-full">
             <div class="card-body">
-              <h2 class="card-title">Resumen</h2>
-              <p class="text-sm opacity-80">Esta sección permanece visible.</p>
-              <pre class="mt-3 max-h-[60vh] overflow-auto rounded-md bg-base-100 p-3 text-xs text-base-content">
+              <h2 class="card-title">Configuración</h2>
+              <ConfigurationImage :config="formState" />
+              <pre class="mt-3 rounded-md bg-base-100 p-3 text-xs text-base-content">
 {{ formattedState }}
               </pre>
             </div>
