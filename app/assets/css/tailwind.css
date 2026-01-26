@@ -6,3 +6,8 @@
 
 
 @source "./node_modules/flyonui/dist/index.js"; /* Require only if you want to use FlyonUI JS component */
+
+[data-theme="light"] {
+  --color-primary: #192f75;
+  --color-primary-content: #ffffff;
+}
