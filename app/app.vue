@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-base-100">
+  <div class="min-h-screen bg-base-100" data-theme="light">
     <header class="navbar bg-base-200 px-6">
       <div class="flex-1">
         <a class="flex items-center gap-3 text-xl font-semibold tracking-wide" href="#">
