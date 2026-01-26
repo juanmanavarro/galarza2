@@ -1,21 +1,128 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
+import { usePowerCalculations } from "../composables/usePowerCalculations";
 
-const numeroMaquinas = ref(1);
-const puntoAlimentacion = ref("extremo");
-const condicionesAmbientales = ref("");
-const tipoRecorrido = ref("Línea recta");
-const maximaPotenciaTipo = ref("simultanea");
+const formState = reactive({
+  name: "",
+  location: "",
+  email: "",
+  application_industry_type: "",
+  number_and_type_of_machines_to_feed: 1,
+  type_of_conductors_to_use: "Línea protegida multipolar modular",
+  fase: 3,
+  ground: 1,
+  neutral: 0,
+  total_distance: null,
+  type_of_line: "Línea recta",
+  tramos: [
+    { tramo_recto: null, radio: null, angulo: null, longitud: null },
+    { tramo_recto: null, radio: null, angulo: null, longitud: null },
+    { tramo_recto: null, radio: null, angulo: null, longitud: null },
+    { tramo_recto: null, radio: null, angulo: null, longitud: null },
+  ],
+  work_environment: "",
+  feeding_point_position: "extreme",
+  feeding_point_position_distance: null,
+  environmental_condition: "",
+  environmental_condition_corrosive: "",
+  protected_line: "",
+  min_temperature: null,
+  max_temperature: null,
+  voltage: null,
+  hertz: null,
+  max_permissible_voltage_drop: null,
+  power_mode: "simultanea",
+  max_simultaneous_power_cv: null,
+  max_simultaneous_power_kw: null,
+  max_simultaneous_power_amp: null,
+  max_cv: null,
+  max_kw: null,
+  max_amp: null,
+  supply_support_arms: "0",
+  sketch_file: "",
+  info: "",
+});
+
+const puntoAlimentacion = computed({
+  get: () => formState.feeding_point_position,
+  set: (value) => {
+    formState.feeding_point_position = value;
+  },
+});
+const condicionesAmbientales = computed({
+  get: () => formState.environmental_condition,
+  set: (value) => {
+    formState.environmental_condition = value;
+  },
+});
+const tipoRecorrido = computed({
+  get: () => formState.type_of_line,
+  set: (value) => {
+    formState.type_of_line = value;
+  },
+});
+const maximaPotenciaTipo = computed({
+  get: () => formState.power_mode,
+  set: (value) => {
+    formState.power_mode = value;
+  },
+});
+
+const gruas = ref([]);
+const buildGrua = () => ({
+  servicios: {
+    "Elevación principal": { cv: null, kw: null, amp: null, ed: null },
+    "Elevación auxiliar": { cv: null, kw: null, amp: null, ed: null },
+    "Traslación grúa": { cv: null, kw: null, amp: null, ed: null },
+    "Traslación carro": { cv: null, kw: null, amp: null, ed: null },
+    "Otros servicios": { cv: null, kw: null, amp: null, ed: null },
+  },
+  tomacorrientes: "sin ítem",
+  brazo_arrastre: "sin ítem",
+});
 
 const gruasCount = computed(() => {
-  const value = Number(numeroMaquinas.value);
+  const value = Number(formState.number_and_type_of_machines_to_feed);
   if (!Number.isFinite(value)) {
     return 1;
   }
   return Math.min(4, Math.max(1, Math.floor(value)));
 });
 
+watch(
+  gruasCount,
+  (count) => {
+    const current = gruas.value.length;
+    if (count > current) {
+      for (let i = current; i < count; i += 1) {
+        gruas.value.push(buildGrua());
+      }
+    } else if (count < current) {
+      gruas.value.splice(count);
+    }
+  },
+  { immediate: true }
+);
+
+const handleFileChange = (event) => {
+  const file = event.target?.files?.[0];
+  formState.sketch_file = file ? file.name : "";
+};
+
+const formattedState = computed(() =>
+  JSON.stringify(
+    {
+      ...formState,
+      gruas: gruas.value,
+    },
+    null,
+    2
+  )
+);
+
 const errors = ref({});
+
+const { handleCvInput, handleKwInput, handleGroupInput } = usePowerCalculations(formState);
 
 const getErrorMessage = (target) => {
   const { validity } = target;
@@ -59,6 +166,24 @@ const handleInputValidation = (event) => {
   } else {
     delete errors.value[target.name];
   }
+
+  if (target.name === "min_temperature" || target.name === "max_temperature") {
+    const minTemp = formState.min_temperature;
+    const maxTemp = formState.max_temperature;
+    if (minTemp !== null && maxTemp !== null && minTemp >= maxTemp) {
+      errors.value.min_temperature = "La temperatura mínima debe ser menor que la temperatura máxima.";
+    } else {
+      delete errors.value.min_temperature;
+    }
+  }
+
+  if (target.name === "voltage") {
+    if (formState.voltage !== null && Number(formState.voltage) > 500) {
+      errors.value.voltage = "Para un voltaje mayor a 500V contacte con el servicio técnico.";
+    } else {
+      delete errors.value.voltage;
+    }
+  }
 };
 </script>
 
@@ -88,6 +213,7 @@ const handleInputValidation = (event) => {
                 type="text"
                 class="input input-bordered w-full"
                 placeholder="Industria alimentaria, nave industrial, taller mecánico"
+                v-model="formState.application_industry_type"
                 required
               />
               <p v-if="errors.application_industry_type" class="text-sm text-error">
@@ -108,7 +234,7 @@ const handleInputValidation = (event) => {
                 max="4"
                 step="1"
                 class="input input-bordered w-full"
-                v-model.number="numeroMaquinas"
+                v-model.number="formState.number_and_type_of_machines_to_feed"
                 required
               />
               <p v-if="errors.number_and_type_of_machines_to_feed" class="text-sm text-error">
@@ -127,8 +253,8 @@ const handleInputValidation = (event) => {
                     type="radio"
                     name="type_of_conductors_to_use"
                     value="Línea protegida multipolar modular"
+                    v-model="formState.type_of_conductors_to_use"
                     class="radio radio-primary"
-                    checked
                     required
                   />
                   <span>Línea protegida multipolar modular</span>
@@ -138,6 +264,7 @@ const handleInputValidation = (event) => {
                     type="radio"
                     name="type_of_conductors_to_use"
                     value="Línea protegida multipolar con pletina continua"
+                    v-model="formState.type_of_conductors_to_use"
                     class="radio"
                     disabled
                   />
@@ -148,6 +275,7 @@ const handleInputValidation = (event) => {
                     type="radio"
                     name="type_of_conductors_to_use"
                     value="Línea protegida unipolar"
+                    v-model="formState.type_of_conductors_to_use"
                     class="radio"
                     disabled
                   />
@@ -158,6 +286,7 @@ const handleInputValidation = (event) => {
                     type="radio"
                     name="type_of_conductors_to_use"
                     value="Raíles cabeza de cobre"
+                    v-model="formState.type_of_conductors_to_use"
                     class="radio"
                     disabled
                   />
@@ -186,9 +315,9 @@ const handleInputValidation = (event) => {
                     type="number"
                     min="1"
                     step="1"
-                    value="3"
                     class="input input-bordered w-full"
                     readonly
+                    v-model.number="formState.fase"
                   />
                 </div>
                 <div class="space-y-2">
@@ -202,9 +331,9 @@ const handleInputValidation = (event) => {
                     type="number"
                     min="1"
                     step="1"
-                    value="1"
                     class="input input-bordered w-full"
                     readonly
+                    v-model.number="formState.ground"
                   />
                 </div>
                 <div class="space-y-2">
@@ -218,9 +347,9 @@ const handleInputValidation = (event) => {
                     type="number"
                     min="0"
                     step="1"
-                    value="0"
                     class="input input-bordered w-full"
                     readonly
+                    v-model.number="formState.neutral"
                   />
                 </div>
               </div>
@@ -240,6 +369,7 @@ const handleInputValidation = (event) => {
                   max="280"
                   step="1"
                   class="input input-bordered join-item w-full"
+                  v-model.number="formState.total_distance"
                   required
                 />
               </div>
@@ -285,7 +415,13 @@ const handleInputValidation = (event) => {
               <div class="space-y-6 rounded-md border border-base-300 bg-base-200/40 p-4">
                 <div class="space-y-2">
                   <span class="label-text">Tramo recto</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full max-w-md" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full max-w-md"
+                    v-model.number="formState.tramos[0].tramo_recto"
+                  />
                   <p class="text-xs text-base-content/60">metros</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-3">
@@ -298,6 +434,7 @@ const handleInputValidation = (event) => {
                       step="0.01"
                       class="input input-bordered w-full"
                       :required="tipoRecorrido === 'Línea curva'"
+                      v-model.number="formState.tramos[0].radio"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                     <p v-if="errors['tramos[1][radio]']" class="text-sm text-error">
@@ -314,6 +451,7 @@ const handleInputValidation = (event) => {
                       step="0.01"
                       class="input input-bordered w-full"
                       :required="tipoRecorrido === 'Línea curva'"
+                      v-model.number="formState.tramos[0].angulo"
                     />
                     <p class="text-xs text-base-content/60">grados</p>
                     <p v-if="errors['tramos[1][angulo]']" class="text-sm text-error">
@@ -329,6 +467,7 @@ const handleInputValidation = (event) => {
                       step="0.01"
                       class="input input-bordered w-full"
                       :required="tipoRecorrido === 'Línea curva'"
+                      v-model.number="formState.tramos[0].longitud"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                     <p v-if="errors['tramos[1][longitud]']" class="text-sm text-error">
@@ -341,7 +480,13 @@ const handleInputValidation = (event) => {
               <div class="space-y-6 rounded-md border border-base-300 bg-base-200/40 p-4">
                 <div class="space-y-2">
                   <span class="label-text">Tramo recto</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full max-w-md" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full max-w-md"
+                    v-model.number="formState.tramos[1].tramo_recto"
+                  />
                   <p class="text-xs text-base-content/60">metros</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-3">
@@ -353,6 +498,7 @@ const handleInputValidation = (event) => {
                       min="0"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[1].radio"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                   </div>
@@ -365,6 +511,7 @@ const handleInputValidation = (event) => {
                       max="360"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[1].angulo"
                     />
                     <p class="text-xs text-base-content/60">grados</p>
                   </div>
@@ -376,6 +523,7 @@ const handleInputValidation = (event) => {
                       min="0"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[1].longitud"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                   </div>
@@ -385,7 +533,13 @@ const handleInputValidation = (event) => {
               <div class="space-y-6 rounded-md border border-base-300 bg-base-200/40 p-4">
                 <div class="space-y-2">
                   <span class="label-text">Tramo recto</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full max-w-md" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full max-w-md"
+                    v-model.number="formState.tramos[2].tramo_recto"
+                  />
                   <p class="text-xs text-base-content/60">metros</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-3">
@@ -397,6 +551,7 @@ const handleInputValidation = (event) => {
                       min="0"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[2].radio"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                   </div>
@@ -409,6 +564,7 @@ const handleInputValidation = (event) => {
                       max="360"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[2].angulo"
                     />
                     <p class="text-xs text-base-content/60">grados</p>
                   </div>
@@ -420,6 +576,7 @@ const handleInputValidation = (event) => {
                       min="0"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[2].longitud"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                   </div>
@@ -429,7 +586,13 @@ const handleInputValidation = (event) => {
               <div class="space-y-6 rounded-md border border-base-300 bg-base-200/40 p-4">
                 <div class="space-y-2">
                   <span class="label-text">Tramo recto</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full max-w-md" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full max-w-md"
+                    v-model.number="formState.tramos[3].tramo_recto"
+                  />
                   <p class="text-xs text-base-content/60">metros</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-3">
@@ -441,6 +604,7 @@ const handleInputValidation = (event) => {
                       min="0"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[3].radio"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                   </div>
@@ -453,6 +617,7 @@ const handleInputValidation = (event) => {
                       max="360"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[3].angulo"
                     />
                     <p class="text-xs text-base-content/60">grados</p>
                   </div>
@@ -464,6 +629,7 @@ const handleInputValidation = (event) => {
                       min="0"
                       step="0.01"
                       class="input input-bordered w-full"
+                      v-model.number="formState.tramos[3].longitud"
                     />
                     <p class="text-xs text-base-content/60">m.</p>
                   </div>
@@ -481,6 +647,7 @@ const handleInputValidation = (event) => {
                   type="radio"
                   name="work_environment"
                   value="Interior"
+                  v-model="formState.work_environment"
                   class="radio radio-primary"
                   required
                 />
@@ -491,6 +658,7 @@ const handleInputValidation = (event) => {
                   type="radio"
                   name="work_environment"
                   value="Exterior"
+                  v-model="formState.work_environment"
                   class="radio radio-primary"
                 />
                 <span>Exterior</span>
@@ -543,6 +711,7 @@ const handleInputValidation = (event) => {
                   class="input input-bordered w-24"
                   :disabled="puntoAlimentacion !== 'distance'"
                   :required="puntoAlimentacion === 'distance'"
+                  v-model.number="formState.feeding_point_position_distance"
                 />
                 <span>metros del extremo</span>
               </label>
@@ -606,6 +775,7 @@ const handleInputValidation = (event) => {
                 rows="4"
                 :disabled="condicionesAmbientales !== 'corrosive'"
                 :required="condicionesAmbientales === 'corrosive'"
+                v-model="formState.environmental_condition_corrosive"
               />
               <p v-if="errors.environmental_condition" class="text-sm text-error">
                 {{ errors.environmental_condition }}
@@ -625,6 +795,7 @@ const handleInputValidation = (event) => {
                   type="radio"
                   name="protected_line"
                   value="0"
+                  v-model="formState.protected_line"
                   class="radio radio-primary"
                   required
                 />
@@ -635,6 +806,7 @@ const handleInputValidation = (event) => {
                   type="radio"
                   name="protected_line"
                   value="1"
+                  v-model="formState.protected_line"
                   class="radio radio-primary"
                 />
                 <span>Sí</span>
@@ -649,11 +821,26 @@ const handleInputValidation = (event) => {
               <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
                   <span class="label-text">°C mínimos</span>
-                  <input type="number" step="0.01" class="input input-bordered w-full" />
+                  <input
+                    type="number"
+                    name="min_temperature"
+                    step="0.01"
+                    class="input input-bordered w-full"
+                    v-model.number="formState.min_temperature"
+                  />
+                  <p v-if="errors.min_temperature" class="text-sm text-error w-full">
+                    {{ errors.min_temperature }}
+                  </p>
                 </div>
                 <div class="space-y-2">
                   <span class="label-text">°C máximos</span>
-                  <input type="number" step="0.01" class="input input-bordered w-full" />
+                  <input
+                    type="number"
+                    name="max_temperature"
+                    step="0.01"
+                    class="input input-bordered w-full"
+                    v-model.number="formState.max_temperature"
+                  />
                 </div>
               </div>
             </div>
@@ -663,12 +850,29 @@ const handleInputValidation = (event) => {
               <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
                   <span class="label-text">Voltaje</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
+                  <input
+                    type="number"
+                    name="voltage"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full"
+                    v-model.number="formState.voltage"
+                  />
                   <p class="text-xs text-base-content/60">Voltios</p>
+                  <p v-if="errors.voltage" class="text-sm text-error w-full">
+                    {{ errors.voltage }}
+                  </p>
                 </div>
                 <div class="space-y-2">
                   <span class="label-text">Frecuencia</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
+                  <input
+                    type="number"
+                    name="hertz"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full"
+                    v-model.number="formState.hertz"
+                  />
                   <p class="text-xs text-base-content/60">Herzios</p>
                 </div>
               </div>
@@ -678,7 +882,14 @@ const handleInputValidation = (event) => {
               <h2 class="text-base font-semibold">Máxima caída de tensión permitida</h2>
               <div class="space-y-2">
                 <span class="label-text">Máxima caída de tensión permitida</span>
-                <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
+                <input
+                  type="number"
+                  name="max_permissible_voltage_drop"
+                  min="0"
+                  step="0.01"
+                  class="input input-bordered w-full"
+                  v-model.number="formState.max_permissible_voltage_drop"
+                />
                 <p class="text-xs text-base-content/60">%</p>
               </div>
             </div>
@@ -686,23 +897,23 @@ const handleInputValidation = (event) => {
             <div class="space-y-3">
               <h2 class="text-base font-semibold">Máxima potencia</h2>
               <label class="flex items-center gap-3">
-                <input
-                  v-model="maximaPotenciaTipo"
-                  type="radio"
-                  name="maxima_potencia_tipo"
-                  value="simultanea"
-                  class="radio radio-primary"
-                />
+                  <input
+                    v-model="maximaPotenciaTipo"
+                    type="radio"
+                    name="power_mode"
+                    value="simultanea"
+                    class="radio radio-primary"
+                  />
                 <span>Simultanea</span>
               </label>
               <label class="flex items-center gap-3">
-                <input
-                  v-model="maximaPotenciaTipo"
-                  type="radio"
-                  name="maxima_potencia_tipo"
-                  value="por_grua"
-                  class="radio radio-primary"
-                />
+                  <input
+                    v-model="maximaPotenciaTipo"
+                    type="radio"
+                    name="power_mode"
+                    value="por_grua"
+                    class="radio radio-primary"
+                  />
                 <span>Por grúa</span>
               </label>
             </div>
@@ -712,17 +923,41 @@ const handleInputValidation = (event) => {
               <div class="space-y-3">
                 <div class="space-y-2">
                   <span class="label-text">Potencia en caballos</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
+                  <input
+                    type="number"
+                    name="max_simultaneous_power_cv"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full"
+                    v-model.number="formState.max_simultaneous_power_cv"
+                    @input="handleCvInput"
+                  />
                   <p class="text-xs text-base-content/60">C.V.</p>
                 </div>
                 <div class="space-y-2">
                   <span class="label-text">Potencia en kilovatios</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
+                  <input
+                    type="number"
+                    name="max_simultaneous_power_kw"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full"
+                    v-model.number="formState.max_simultaneous_power_kw"
+                    @input="handleKwInput"
+                  />
                   <p class="text-xs text-base-content/60">Kw</p>
                 </div>
                 <div class="space-y-2">
                   <span class="label-text">Intensidad nominal</span>
-                  <input type="number" min="0" step="0.01" class="input input-bordered w-full" />
+                  <input
+                    type="number"
+                    name="max_simultaneous_power_amp"
+                    min="0"
+                    step="0.01"
+                    class="input input-bordered w-full"
+                    v-model.number="formState.max_simultaneous_power_amp"
+                    readonly
+                  />
                   <p class="text-xs text-base-content/60">Amp. (nom)</p>
                 </div>
               </div>
@@ -749,38 +984,233 @@ const handleInputValidation = (event) => {
                     <tbody>
                       <tr>
                         <td>Elevación principal</td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td>
+                          <input
+                            :name="`main_lift_cv_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación principal'].cv"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Elevación principal'], 'cv')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`main_lift_kw_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación principal'].kw"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Elevación principal'], 'kw')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`main_lift_amp_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación principal'].amp"
+                            readonly
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`main_lift_ed_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación principal'].ed"
+                          />
+                        </td>
                       </tr>
                       <tr>
                         <td>Elevación auxiliar</td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td>
+                          <input
+                            :name="`auxiliary_lift_cv_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación auxiliar'].cv"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Elevación auxiliar'], 'cv')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`auxiliary_lift_kw_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación auxiliar'].kw"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Elevación auxiliar'], 'kw')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`auxiliary_lift_amp_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación auxiliar'].amp"
+                            readonly
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`auxiliary_lift_ed_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Elevación auxiliar'].ed"
+                          />
+                        </td>
                       </tr>
                       <tr>
                         <td>Traslación grúa</td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td>
+                          <input
+                            :name="`crane_translation_cv_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación grúa'].cv"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Traslación grúa'], 'cv')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`crane_translation_kw_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación grúa'].kw"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Traslación grúa'], 'kw')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`crane_translation_amp_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación grúa'].amp"
+                            readonly
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`crane_translation_ed_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación grúa'].ed"
+                          />
+                        </td>
                       </tr>
                       <tr>
                         <td>Traslación carro</td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td>
+                          <input
+                            :name="`trolley_translation_cv_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación carro'].cv"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Traslación carro'], 'cv')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`trolley_translation_kw_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación carro'].kw"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Traslación carro'], 'kw')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`trolley_translation_amp_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación carro'].amp"
+                            readonly
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`trolley_translation_ed_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Traslación carro'].ed"
+                          />
+                        </td>
                       </tr>
                       <tr>
                         <td>Otros servicios</td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
-                        <td><input type="number" min="0" step="0.01" class="input input-bordered w-24" /></td>
+                        <td>
+                          <input
+                            :name="`other_services_cv_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Otros servicios'].cv"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Otros servicios'], 'cv')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`other_services_kw_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Otros servicios'].kw"
+                            @input="handleGroupInput(gruas[index - 1].servicios['Otros servicios'], 'kw')"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`other_services_amp_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Otros servicios'].amp"
+                            readonly
+                          />
+                        </td>
+                        <td>
+                          <input
+                            :name="`other_services_ed_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            class="input input-bordered w-24"
+                            v-model.number="gruas[index - 1].servicios['Otros servicios'].ed"
+                          />
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -788,11 +1218,19 @@ const handleInputValidation = (event) => {
                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
                   <div class="space-y-2">
                     <span class="label-text">Tomacorrientes</span>
-                    <input type="text" class="input input-bordered w-full" value="sin ítem" />
+                    <input
+                      type="text"
+                      class="input input-bordered w-full"
+                      v-model="gruas[index - 1].tomacorrientes"
+                    />
                   </div>
                   <div class="space-y-2">
                     <span class="label-text">Brazo arrastre</span>
-                    <input type="text" class="input input-bordered w-full" value="sin ítem" />
+                    <input
+                      type="text"
+                      class="input input-bordered w-full"
+                      v-model="gruas[index - 1].brazo_arrastre"
+                    />
                   </div>
                 </div>
               </div>
@@ -804,11 +1242,24 @@ const handleInputValidation = (event) => {
                 <span class="text-error"> *</span>
               </h2>
               <label class="flex items-center gap-3">
-                <input type="radio" name="suministrar_brazos_soporte" class="radio radio-primary" checked required />
+                <input
+                  type="radio"
+                  name="supply_support_arms"
+                  value="0"
+                  v-model="formState.supply_support_arms"
+                  class="radio radio-primary"
+                  required
+                />
                 <span>No</span>
               </label>
               <label class="flex items-center gap-3">
-                <input type="radio" name="suministrar_brazos_soporte" class="radio radio-primary" />
+                <input
+                  type="radio"
+                  name="supply_support_arms"
+                  value="1"
+                  v-model="formState.supply_support_arms"
+                  class="radio radio-primary"
+                />
                 <span>Sí</span>
               </label>
             </div>
@@ -821,7 +1272,13 @@ const handleInputValidation = (event) => {
                 <label class="label-text" for="fileInputLabel">
                   Para líneas con embudos o zonas seccionadas por favor remitir un croquis
                 </label>
-                <input type="file" class="input" id="fileInputLabel" />
+                <input
+                  type="file"
+                  name="sketch_file"
+                  class="input"
+                  id="fileInputLabel"
+                  @change="handleFileChange"
+                />
               </div>
             </div>
 
@@ -833,17 +1290,19 @@ const handleInputValidation = (event) => {
                 <span class="label-text">
                   Información adicional que podría ser importante para la selección de la línea
                 </span>
-                <textarea class="textarea textarea-bordered w-full" rows="4"></textarea>
+                <textarea class="textarea textarea-bordered w-full" rows="4" name="info" v-model="formState.info"></textarea>
               </div>
             </div>
           </form>
         </section>
-        <aside class="w-80 flex-none h-full">
-          <div class="card bg-base-200 shadow-sm sticky top-4">
+        <aside class="flex-1 h-full">
+          <div class="card bg-base-200 shadow-sm sticky top-4 w-full">
             <div class="card-body">
               <h2 class="card-title">Resumen</h2>
               <p class="text-sm opacity-80">Esta sección permanece visible.</p>
-              <button class="btn btn-primary">Continuar</button>
+              <pre class="mt-3 max-h-[60vh] overflow-auto rounded-md bg-base-100 p-3 text-xs text-base-content">
+{{ formattedState }}
+              </pre>
             </div>
           </div>
         </aside>
