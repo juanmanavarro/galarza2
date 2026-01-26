@@ -190,11 +190,13 @@ const handleInputValidation = (event) => {
 <template>
   <div class="h-screen overflow-hidden bg-base-100 flex flex-col" data-theme="light">
     <header class="navbar bg-base-200 px-6 fixed top-0 inset-x-0 z-50 h-16">
-      <div class="flex-1">
+      <div class="relative mx-auto flex w-full max-w-[1500px] items-center">
         <a class="flex items-center gap-3 text-xl font-semibold tracking-wide" href="#">
-          <img src="/logo.png" alt="Logo LM" class="h-9 w-9" />
-          <span>Configurador para líneas conductoras LM</span>
+          <img src="/logo.png" alt="Logo LM" class="h-11 w-11" />
         </a>
+        <span class="absolute inset-x-0 text-center text-xl font-semibold tracking-wide">
+          Configurador para líneas conductoras LM
+        </span>
       </div>
     </header>
 
@@ -881,7 +883,6 @@ const handleInputValidation = (event) => {
             <div class="space-y-3">
               <h2 class="text-base font-semibold">Máxima caída de tensión permitida</h2>
               <div class="space-y-2">
-                <span class="label-text">Máxima caída de tensión permitida</span>
                 <input
                   type="number"
                   name="max_permissible_voltage_drop"
