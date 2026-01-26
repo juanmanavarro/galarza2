@@ -73,10 +73,10 @@ const handleInputValidation = (event) => {
       </div>
     </header>
 
-    <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-2 mx-64">
+    <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-2 mx-0">
       <div class="flex h-full gap-8">
-        <section class="flex-1 h-full overflow-y-auto pr-2">
-          <form class="max-w-4xl space-y-8" @input="handleInputValidation" @change="handleInputValidation">
+        <section class="flex-none h-full w-full max-w-4xl overflow-y-auto pr-2">
+          <form class="w-full space-y-8" @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
                 Tipo de aplicación / industria donde la línea eléctrica va a ser instalada
