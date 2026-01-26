@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Explicit sources keep Tailwind v4 content scanning in sync with Nuxt app dir. */
+@source "../../**/*.{vue,js,ts}";
+@plugin "flyonui";
+
+
+@source "./node_modules/flyonui/dist/index.js"; /* Require only if you want to use FlyonUI JS component */
