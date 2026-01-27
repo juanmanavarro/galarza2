@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { usePowerCalculations } from "../composables/usePowerCalculations";
 
 const STORAGE_KEY = "galarza2-config-state";
+const currentYear = new Date().getFullYear();
 
-const formState = reactive({
+const createInitialFormState = () => ({
   name: "",
   location: "",
   email: "",
@@ -45,6 +46,8 @@ const formState = reactive({
   info: "",
 });
 
+const formState = reactive(createInitialFormState());
+
 const puntoAlimentacion = computed({
   get: () => formState.feeding_point_position,
   set: (value) => {
@@ -72,6 +75,9 @@ const maximaPotenciaTipo = computed({
 
 const gruas = ref([]);
 const isHydrated = ref(false);
+const isResetting = ref(false);
+const lastSavedState = ref("");
+const initialState = ref("");
 const buildGrua = () => ({
   servicios: {
     "Elevación principal": { cv: null, kw: null, amp: null, ed: null },
@@ -109,6 +115,14 @@ watch(gruasCount, syncGruasLength, { immediate: true });
 const handleFileChange = (event) => {
   const file = event.target?.files?.[0];
   formState.sketch_file = file ? file.name : "";
+};
+
+const buildConfigPayload = () => {
+  const { name, location, email, ...configState } = formState;
+  return {
+    ...configState,
+    gruas: gruas.value,
+  };
 };
 
 const loadStoredState = () => {
@@ -149,17 +163,20 @@ const saveState = () => {
     return;
   }
 
-  const { name, location, email, ...configState } = formState;
-  const payload = {
-    ...configState,
-    gruas: gruas.value,
-  };
+  if (isResetting.value) {
+    return;
+  }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  const payload = buildConfigPayload();
+  const serialized = JSON.stringify(payload);
+  window.localStorage.setItem(STORAGE_KEY, serialized);
+  lastSavedState.value = serialized;
 };
 
 onMounted(() => {
   loadStoredState();
+  lastSavedState.value = JSON.stringify(buildConfigPayload());
+  initialState.value = lastSavedState.value;
   isHydrated.value = true;
 });
 
@@ -171,21 +188,34 @@ watch(
   { deep: true }
 );
 
-const formattedState = computed(() => {
-  const { name, location, email, ...configState } = formState;
-  return JSON.stringify(
-    {
-      ...configState,
-      gruas: gruas.value,
-    },
-    null,
-    2
-  );
-});
+const isDirty = computed(() => JSON.stringify(buildConfigPayload()) !== initialState.value);
+
+const formattedState = computed(() => JSON.stringify(buildConfigPayload(), null, 2));
 
 const errors = ref({});
 
 const { handleCvInput, handleKwInput, handleGroupInput } = usePowerCalculations(formState);
+
+const handleReset = async () => {
+  if (typeof window !== "undefined") {
+    const confirmed = window.confirm("¿Seguro que quieres reiniciar la configuración?");
+    if (!confirmed) {
+      return;
+    }
+  }
+  isResetting.value = true;
+  Object.assign(formState, createInitialFormState());
+  gruas.value = [];
+  syncGruasLength();
+  errors.value = {};
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+  lastSavedState.value = JSON.stringify(buildConfigPayload());
+  initialState.value = lastSavedState.value;
+  await nextTick();
+  isResetting.value = false;
+};
 
 const getErrorMessage = (target) => {
   const { validity } = target;
@@ -263,7 +293,7 @@ const handleInputValidation = (event) => {
       </div>
     </header>
 
-    <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-2 mx-auto max-w-[1500px]">
+    <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-24 mx-auto max-w-[1500px]">
       <div v-if="isHydrated" class="flex h-full gap-8">
         <section class="flex-1 h-full overflow-y-auto pr-2">
           <form class="w-full space-y-8" @input="handleInputValidation" @change="handleInputValidation">
@@ -1376,4 +1406,12 @@ const handleInputValidation = (event) => {
       </div>
     </main>
   </div>
+  <footer class="fixed bottom-0 inset-x-0 z-40 border-t border-base-200 bg-base-100/95 backdrop-blur">
+    <div class="mx-auto flex h-14 max-w-[1500px] items-center justify-between gap-4 px-6">
+      <span class="text-xs text-base-content/70">INDUSTRIAS GALARZA, S.A. © {{ currentYear }}</span>
+      <button v-if="isDirty" type="button" class="btn btn-error" @click="handleReset">
+        Reiniciar
+      </button>
+    </div>
+  </footer>
 </template>
