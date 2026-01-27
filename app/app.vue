@@ -1,6 +1,8 @@
 <script setup>
-import { computed, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { usePowerCalculations } from "../composables/usePowerCalculations";
+
+const STORAGE_KEY = "galarza2-config-state";
 
 const formState = reactive({
   name: "",
@@ -69,6 +71,7 @@ const maximaPotenciaTipo = computed({
 });
 
 const gruas = ref([]);
+const isHydrated = ref(false);
 const buildGrua = () => ({
   servicios: {
     "Elevación principal": { cv: null, kw: null, amp: null, ed: null },
@@ -81,6 +84,18 @@ const buildGrua = () => ({
   brazo_arrastre: "sin ítem",
 });
 
+const syncGruasLength = () => {
+  const count = gruasCount.value;
+  const current = gruas.value.length;
+  if (count > current) {
+    for (let i = current; i < count; i += 1) {
+      gruas.value.push(buildGrua());
+    }
+  } else if (count < current) {
+    gruas.value.splice(count);
+  }
+};
+
 const gruasCount = computed(() => {
   const value = Number(formState.number_and_type_of_machines_to_feed);
   if (!Number.isFinite(value)) {
@@ -89,36 +104,84 @@ const gruasCount = computed(() => {
   return Math.min(4, Math.max(1, Math.floor(value)));
 });
 
-watch(
-  gruasCount,
-  (count) => {
-    const current = gruas.value.length;
-    if (count > current) {
-      for (let i = current; i < count; i += 1) {
-        gruas.value.push(buildGrua());
-      }
-    } else if (count < current) {
-      gruas.value.splice(count);
-    }
-  },
-  { immediate: true }
-);
+watch(gruasCount, syncGruasLength, { immediate: true });
 
 const handleFileChange = (event) => {
   const file = event.target?.files?.[0];
   formState.sketch_file = file ? file.name : "";
 };
 
-const formattedState = computed(() =>
-  JSON.stringify(
+const loadStoredState = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return;
+    }
+
+    const { gruas: storedGruas, ...storedForm } = parsed;
+    Object.keys(formState).forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(storedForm, key)) {
+        formState[key] = storedForm[key];
+      }
+    });
+
+    if (Array.isArray(storedGruas)) {
+      gruas.value = storedGruas;
+    }
+
+    syncGruasLength();
+  } catch (error) {
+    return;
+  }
+};
+
+const saveState = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const { name, location, email, ...configState } = formState;
+  const payload = {
+    ...configState,
+    gruas: gruas.value,
+  };
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+};
+
+onMounted(() => {
+  loadStoredState();
+  isHydrated.value = true;
+});
+
+watch(
+  () => ({ ...formState, gruas: gruas.value }),
+  () => {
+    saveState();
+  },
+  { deep: true }
+);
+
+const formattedState = computed(() => {
+  const { name, location, email, ...configState } = formState;
+  return JSON.stringify(
     {
-      ...formState,
+      ...configState,
       gruas: gruas.value,
     },
     null,
     2
-  )
-);
+  );
+});
 
 const errors = ref({});
 
@@ -201,7 +264,7 @@ const handleInputValidation = (event) => {
     </header>
 
     <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-2 mx-auto max-w-[1500px]">
-      <div class="flex h-full gap-8">
+      <div v-if="isHydrated" class="flex h-full gap-8">
         <section class="flex-1 h-full overflow-y-auto pr-2">
           <form class="w-full space-y-8" @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
@@ -1307,6 +1370,9 @@ const handleInputValidation = (event) => {
             </div>
           </div>
         </aside>
+      </div>
+      <div v-else class="flex h-full items-center justify-center text-sm text-base-content/60">
+        Cargando configuración...
       </div>
     </main>
   </div>
