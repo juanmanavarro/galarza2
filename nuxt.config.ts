@@ -13,6 +13,14 @@ export default defineNuxtConfig({
     }
   },
   css: ['~/assets/css/tailwind.css'],
+  nitro: {
+    devProxy: {
+      '/mail.php': {
+        target: 'http://localhost:8001',
+        changeOrigin: true
+      }
+    }
+  },
   postcss: {
     plugins: {
       autoprefixer: {}

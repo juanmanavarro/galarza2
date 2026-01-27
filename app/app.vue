@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { usePowerCalculations } from "../composables/usePowerCalculations";
+import { useSendModal } from "../composables/useSendModal";
 
 const STORAGE_KEY = "galarza2-config-state";
 const currentYear = new Date().getFullYear();
@@ -194,15 +195,130 @@ const formattedState = computed(() => JSON.stringify(buildConfigPayload(), null,
 
 const errors = ref({});
 
-const { handleCvInput, handleKwInput, handleGroupInput } = usePowerCalculations(formState);
+const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
+const isValidNumber = (value, { min = null, max = null } = {}) => {
+  if (value === null || value === "" || Number.isNaN(Number(value))) {
+    return false;
+  }
+  const numeric = Number(value);
+  if (min !== null && numeric < min) {
+    return false;
+  }
+  if (max !== null && numeric > max) {
+    return false;
+  }
+  return true;
+};
 
-const handleReset = async () => {
-  if (typeof window !== "undefined") {
-    const confirmed = window.confirm("¿Seguro que quieres reiniciar la configuración?");
-    if (!confirmed) {
-      return;
+const isRequiredFormComplete = computed(() => {
+  if (!isNonEmptyString(formState.application_industry_type)) {
+    return false;
+  }
+  if (!isValidNumber(formState.number_and_type_of_machines_to_feed, { min: 1, max: 4 })) {
+    return false;
+  }
+  if (!isNonEmptyString(formState.type_of_conductors_to_use)) {
+    return false;
+  }
+  if (!isValidNumber(formState.total_distance, { min: 1, max: 280 })) {
+    return false;
+  }
+  if (!isNonEmptyString(formState.type_of_line)) {
+    return false;
+  }
+  if (formState.type_of_line === "Línea curva") {
+    if (!isValidNumber(formState.tramos[0]?.radio, { min: 0 })) {
+      return false;
+    }
+    if (!isValidNumber(formState.tramos[0]?.angulo, { min: 0, max: 360 })) {
+      return false;
+    }
+    if (!isValidNumber(formState.tramos[0]?.longitud, { min: 0 })) {
+      return false;
     }
   }
+  if (!isNonEmptyString(formState.work_environment)) {
+    return false;
+  }
+  if (!isNonEmptyString(formState.feeding_point_position)) {
+    return false;
+  }
+  if (
+    formState.feeding_point_position === "distance" &&
+    !isValidNumber(formState.feeding_point_position_distance, { min: 0 })
+  ) {
+    return false;
+  }
+  if (!isNonEmptyString(formState.environmental_condition)) {
+    return false;
+  }
+  if (
+    formState.environmental_condition === "corrosive" &&
+    !isNonEmptyString(formState.environmental_condition_corrosive)
+  ) {
+    return false;
+  }
+  if (!isNonEmptyString(formState.protected_line)) {
+    return false;
+  }
+  if (!isNonEmptyString(formState.supply_support_arms)) {
+    return false;
+  }
+  return true;
+});
+
+const { handleCvInput, handleKwInput, handleGroupInput } = usePowerCalculations(formState);
+
+const {
+  sendModalRef,
+  sendForm,
+  sendModalOptions,
+  isSending,
+  openSendModal,
+  closeSendModal,
+  handleSendSubmit,
+} = useSendModal({
+  modalId: "sendModal",
+  backdropClasses: "overlay-backdrop fixed inset-0 bg-black/40",
+  endpoint: () => {
+    if (typeof window === "undefined") {
+      return "/mail.php";
+    }
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1";
+    return isLocal ? "http://localhost:8001/mail.php" : "/mail.php";
+  },
+  getPayload: () => ({
+    config: buildConfigPayload(),
+  }),
+  prefillWhenLocal: true,
+  onSuccess: () => {
+    showToast("Email enviado correctamente");
+    resetFormState();
+  },
+  onError: () => {
+    showToast("No se pudo enviar el email", "error");
+  },
+});
+
+const toastMessage = ref("");
+const isToastVisible = ref(false);
+const toastVariant = ref("success");
+let toastTimeout = null;
+
+const showToast = (message, variant = "success") => {
+  toastMessage.value = message;
+  toastVariant.value = variant;
+  isToastVisible.value = true;
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+  }
+  toastTimeout = setTimeout(() => {
+    isToastVisible.value = false;
+  }, 3000);
+};
+
+const resetFormState = async () => {
   isResetting.value = true;
   Object.assign(formState, createInitialFormState());
   gruas.value = [];
@@ -215,6 +331,16 @@ const handleReset = async () => {
   initialState.value = lastSavedState.value;
   await nextTick();
   isResetting.value = false;
+};
+
+const handleReset = async () => {
+  if (typeof window !== "undefined") {
+    const confirmed = window.confirm("¿Seguro que quieres reiniciar la configuración?");
+    if (!confirmed) {
+      return;
+    }
+  }
+  await resetFormState();
 };
 
 const getErrorMessage = (target) => {
@@ -296,7 +422,7 @@ const handleInputValidation = (event) => {
     <main class="h-[calc(100vh-64px)] overflow-hidden pt-20 pb-2 mx-auto max-w-[1500px]">
       <div v-if="isHydrated" class="flex h-full gap-8">
         <section class="flex-1 h-full overflow-y-auto pr-2">
-          <form class="w-full space-y-8" @input="handleInputValidation" @change="handleInputValidation">
+          <form class="w-full space-y-8" @submit.prevent @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
                 Tipo de aplicación / industria donde la línea eléctrica va a ser instalada
@@ -1409,9 +1535,104 @@ const handleInputValidation = (event) => {
   <footer class="fixed bottom-0 inset-x-0 z-40 border-t border-base-200 bg-base-100/95 backdrop-blur">
     <div class="mx-auto flex h-14 max-w-[1500px] items-center justify-between gap-4 px-6">
       <span class="text-xs text-base-content/70">INDUSTRIAS GALARZA, S.A. © {{ currentYear }}</span>
-      <button v-if="isDirty" type="button" class="btn btn-error" @click="handleReset">
-        Reiniciar
-      </button>
+      <div class="flex items-center gap-3">
+        <button type="button" class="btn btn-primary" :disabled="!isRequiredFormComplete" @click="openSendModal">
+          Enviar
+        </button>
+        <button v-if="isDirty" type="button" class="btn btn-error" @click="handleReset">
+          Reiniciar
+        </button>
+      </div>
     </div>
   </footer>
+  <div
+    id="sendModal"
+    ref="sendModalRef"
+    class="overlay modal hidden modal-middle [--body-scroll:true] overlay-open:opacity-100 overlay-open:pointer-events-auto"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="sendModalTitle"
+    :data-overlay-options="sendModalOptions"
+    @click.self="closeSendModal"
+  >
+    <div class="modal-dialog modal-dialog-md">
+      <div class="modal-content overlay-animation-target" data-theme="light">
+        <div class="modal-header">
+          <h3 id="sendModalTitle" class="modal-title">Enviar</h3>
+          <button type="button" class="btn btn-sm btn-circle btn-ghost" @click="closeSendModal">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body space-y-6">
+          <p class="text-base text-base-content/70">
+            Se enviará la configuración a Industrias Galarza S.A. Tras el envío, el formulario se reseteará automáticamente.
+          </p>
+          <div class="space-y-3">
+            <label class="label-text text-base font-semibold" for="sendName">
+              Nombre
+              <span class="text-error"> *</span>
+            </label>
+            <input
+              id="sendName"
+              name="send_name"
+              type="text"
+              class="input input-bordered w-full"
+              v-model="sendForm.name"
+              required
+            />
+          </div>
+          <div class="space-y-3">
+            <label class="label-text text-base font-semibold" for="sendLocation">
+              Provincia / País
+              <span class="text-error"> *</span>
+            </label>
+            <input
+              id="sendLocation"
+              name="send_location"
+              type="text"
+              class="input input-bordered w-full"
+              v-model="sendForm.location"
+              required
+            />
+          </div>
+          <div class="space-y-3">
+            <label class="label-text text-base font-semibold" for="sendEmail">
+              Email
+              <span class="text-error"> *</span>
+            </label>
+            <input
+              id="sendEmail"
+              name="send_email"
+              type="email"
+              class="input input-bordered w-full"
+              v-model="sendForm.email"
+              required
+            />
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-ghost" @click="closeSendModal">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              :disabled="isSending"
+              @click="handleSendSubmit"
+            >
+              {{ isSending ? "Enviando..." : "Enviar" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fixed bottom-20 right-6 z-[100] flex flex-col gap-2">
+    <div
+      v-if="isToastVisible"
+      class="alert shadow-lg"
+      :class="toastVariant === 'error' ? 'alert-error' : 'alert-success'"
+    >
+      <span class="text-base font-semibold">{{ toastMessage }}</span>
+    </div>
+  </div>
 </template>
