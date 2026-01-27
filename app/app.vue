@@ -293,7 +293,7 @@ const handleInputValidation = (event) => {
       </div>
     </header>
 
-    <main class="h-[calc(100vh-64px)] overflow-hidden px-6 pt-20 pb-24 mx-auto max-w-[1500px]">
+    <main class="h-[calc(100vh-64px)] overflow-hidden pt-20 pb-2 mx-auto max-w-[1500px]">
       <div v-if="isHydrated" class="flex h-full gap-8">
         <section class="flex-1 h-full overflow-y-auto pr-2">
           <form class="w-full space-y-8" @input="handleInputValidation" @change="handleInputValidation">
@@ -1389,12 +1389,12 @@ const handleInputValidation = (event) => {
             </div>
           </form>
         </section>
-        <aside class="flex-1 h-full overflow-y-auto pr-2">
-          <div class="card bg-base-200 shadow-sm w-full">
-            <div class="card-body">
+        <aside class="flex-1 h-full overflow-hidden pr-2">
+          <div class="card bg-base-200 shadow-sm w-full h-full">
+            <div class="card-body flex h-full flex-col">
               <h2 class="card-title">Configuración</h2>
               <ConfigurationImage :config="formState" />
-              <pre class="mt-3 rounded-md bg-base-100 p-3 text-xs text-base-content">
+              <pre class="mt-3 flex-1 overflow-y-auto rounded-md bg-base-100 p-3 text-xs text-base-content">
 {{ formattedState }}
               </pre>
             </div>
