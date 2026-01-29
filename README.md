@@ -1,78 +1,29 @@
-# Nuxt Minimal Starter
+## Condiciones de imágenes de configuración
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Estas son las reglas actuales para seleccionar la imagen en `app/components/ConfigurationImage.vue`:
 
-## Setup
-
-Make sure to install dependencies:
-
-```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+- `AE 2m.webp` (default)
+- `Curva naranja.webp`:
+  - `type_of_line === "Línea curva"` AND `work_environment === "Interior"`
+- `Curva gris.webp`:
+  - `type_of_line === "Línea curva"` AND `work_environment === "Exterior"`
+- `recta-interior-extremo.webp`:
+  - `type_of_line === "Línea recta"` AND `feeding_point_position === "extreme"` AND `work_environment === "Interior"`
+- `AI 2m.webp`:
+  - `type_of_line === "Línea recta"` AND `feeding_point_position === "central"` AND `work_environment === "Interior"` AND (`environmental_condition === "humidity"` OR `environmental_condition === "normal"`)
+- `AE-E 1,333m.webp`:
+  - `type_of_line === "Línea recta"` AND `work_environment === "Exterior"` AND `feeding_point_position === "central"` AND `environmental_condition === "normal"`
+  - O bien (fallback): cualquiera de estas condiciones activa AE‑E:
+    - `work_environment === "Exterior"`
+    - `feeding_point_position === "extreme"`
+    - `feeding_point_position === "distance"`
+    - `environmental_condition === "humidity"` AND `feeding_point_position === "extreme"`
+    - `min_temperature === -20` AND `max_temperature === 60` AND `feeding_point_position === "extreme"`
+- `AI-E 1,333m.webp`:
+  - `work_environment === "Interior"` AND `feeding_point_position === "distance"` AND `environmental_condition === "normal"`
+  - O bien (fallback): cualquiera de estas condiciones activa AI‑E:
+    - `environmental_condition === "humidity"` AND `feeding_point_position === "central"`
+    - `min_temperature === -20` AND `max_temperature === 60` AND `feeding_point_position === "central"`
 
 ## Despliegue en Plesk (recomendado: estático + PHP)
 
