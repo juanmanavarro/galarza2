@@ -411,7 +411,7 @@ const handleInputValidation = (event) => {
     <header class="navbar bg-base-200 px-6 fixed top-0 inset-x-0 z-50 h-16">
       <div class="relative mx-auto flex w-full max-w-[1500px] items-center">
         <a class="flex items-center gap-3 text-xl font-semibold tracking-wide" href="#">
-          <img src="/logo.png" alt="Logo LM" class="h-11 w-11" />
+          <img src="/logo.webp" alt="Logo LM" class="h-11 w-11" />
         </a>
         <span class="absolute inset-x-0 text-center text-xl font-semibold tracking-wide">
           Configurador para líneas conductoras LM
@@ -1536,9 +1536,18 @@ const handleInputValidation = (event) => {
     <div class="mx-auto flex h-14 max-w-[1500px] items-center justify-between gap-4 px-6">
       <span class="text-xs text-base-content/70">INDUSTRIAS GALARZA, S.A. © {{ currentYear }}</span>
       <div class="flex items-center gap-3">
-        <button type="button" class="btn btn-primary" :disabled="!isRequiredFormComplete" @click="openSendModal">
-          Enviar
-        </button>
+        <div class="relative group">
+          <button type="button" class="btn btn-primary" :disabled="!isRequiredFormComplete" @click="openSendModal">
+            Enviar
+          </button>
+          <div
+            v-if="!isRequiredFormComplete"
+            role="tooltip"
+            class="pointer-events-none absolute bottom-full left-1/2 mb-2 w-max max-w-xs -translate-x-1/2 rounded bg-base-300 px-3 py-2 text-xs text-base-content shadow opacity-0 transition group-hover:opacity-100"
+          >
+            Faltan campos obligatorios por definir
+          </div>
+        </div>
         <button v-if="isDirty" type="button" class="btn btn-error" @click="handleReset">
           Reiniciar
         </button>

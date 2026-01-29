@@ -9,13 +9,13 @@ const props = defineProps({
 });
 
 const imageMap = {
-  default: { src: "/img/AE 2m.jpg", alt: "AE 2m" },
-  curvaNaranja: { src: "/img/Curva naranja.JPG", alt: "Curva naranja" },
-  curvaGris: { src: "/img/Curva gris.JPG", alt: "Curva gris" },
-  rectaInteriorExtremo: { src: "/img/recta-interior-extremo.jpeg", alt: "Recta interior extremo" },
-  ai2m: { src: "/img/AI 2m.png", alt: "AI 2m" },
-  aeE1333: { src: "/img/AE-E 1,333m.jpg", alt: "AE-E 1,333m" },
-  aiE1333: { src: "/img/AI-E 1,333m.jpg", alt: "AI-E 1,333m" },
+  default: { src: "/img/AE 2m.webp", alt: "AE 2m" },
+  curvaNaranja: { src: "/img/Curva naranja.webp", alt: "Curva naranja" },
+  curvaGris: { src: "/img/Curva gris.webp", alt: "Curva gris" },
+  rectaInteriorExtremo: { src: "/img/recta-interior-extremo.webp", alt: "Recta interior extremo" },
+  ai2m: { src: "/img/AI 2m.webp", alt: "AI 2m" },
+  aeE1333: { src: "/img/AE-E 1,333m.webp", alt: "AE-E 1,333m" },
+  aiE1333: { src: "/img/AI-E 1,333m.webp", alt: "AI-E 1,333m" },
 };
 
 const selectImage = (config) => {
