@@ -6,6 +6,7 @@ import { useTotalPower } from "../composables/useTotalPower";
 import { useVoltageDrop } from "../composables/useVoltageDrop";
 import { useFormValidation } from "../composables/useFormValidation";
 import { useSupports } from "../composables/useSupports";
+import { useGruaAccessories } from "../composables/useGruaAccessories";
 
 const STORAGE_KEY = "galarza2-config-state";
 const currentYear = new Date().getFullYear();
@@ -264,6 +265,7 @@ const { supportsSO4, empalmesEMP4, alimentacionExtremaRef, su5001 } = useSupport
   formState,
   intensityToInstallAmp
 );
+const { tomacorrientesByGrua, brazoArrastreByGrua } = useGruaAccessories(formState, gruas);
 
 const showToast = (message, variant = "success") => {
   toastMessage.value = message;
@@ -1333,24 +1335,7 @@ const handleReset = async () => {
                     </tbody>
                   </table>
                 </div>
-                <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div class="space-y-2">
-                    <span class="label-text">Tomacorrientes</span>
-                    <input
-                      type="text"
-                      class="input input-bordered w-full"
-                      v-model="gruas[index - 1].tomacorrientes"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <span class="label-text">Brazo arrastre</span>
-                    <input
-                      type="text"
-                      class="input input-bordered w-full"
-                      v-model="gruas[index - 1].brazo_arrastre"
-                    />
-                  </div>
-                </div>
+                <!-- Accesorios en la columna derecha -->
               </div>
             </div>
 
@@ -1591,6 +1576,31 @@ const handleReset = async () => {
                     readonly
                     :value="su5001 ?? ''"
                   />
+                </div>
+              </div>
+              <div class="mt-4 space-y-4">
+                <div v-for="index in gruasCount" :key="`grua-resumen-${index}`" class="space-y-2">
+                  <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="space-y-2">
+                      <span class="label-text">Tomacorrientes</span>
+                      <input
+                        type="text"
+                        class="input input-bordered w-full"
+                        readonly
+                        :value="tomacorrientesByGrua[index - 1] ?? ''"
+                      />
+                    </div>
+                    <div class="space-y-2">
+                      <span class="label-text">Brazo arrastre</span>
+                      <input
+                        type="text"
+                        class="input input-bordered w-full"
+                        readonly
+                        :value="brazoArrastreByGrua[index - 1] ?? ''"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               <pre
