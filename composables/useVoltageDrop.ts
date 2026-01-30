@@ -76,10 +76,32 @@ export const useVoltageDrop = (
 
     return Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
   });
+  const voltageDropPercent = computed(() => {
+    const dropVolts = voltageDropVolts.value;
+    const nominalVoltage = Number(formState.voltage);
+    if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
+      return null;
+    }
+    if (!Number.isFinite(dropVolts)) {
+      return null;
+    }
+    return (dropVolts / nominalVoltage) * 100;
+  });
+  const voltageDropMessage = computed(() => {
+    const dropPercent = voltageDropPercent.value;
+    if (!Number.isFinite(dropPercent)) {
+      return null;
+    }
+    return dropPercent < 3
+      ? "SE PUEDE OFERTAR ESTA LÍNEA (<3%)"
+      : "VER OPCIONES 1 Y 2";
+  });
 
   return {
     voltageDropVolts,
     impedanceOhmPerM,
     intensityToInstallAmp,
+    voltageDropPercent,
+    voltageDropMessage,
   };
 };

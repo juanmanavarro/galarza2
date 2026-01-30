@@ -252,10 +252,13 @@ const toastVariant = ref("success");
 let toastTimeout = null;
 
 const { totalPowerWatts, totalPowerAmps } = useTotalPower(formState, gruas, gruasCount);
-const { voltageDropVolts, intensityToInstallAmp, impedanceOhmPerM } = useVoltageDrop(
-  formState,
-  totalPowerAmps
-);
+const {
+  voltageDropVolts,
+  intensityToInstallAmp,
+  impedanceOhmPerM,
+  voltageDropPercent,
+  voltageDropMessage,
+} = useVoltageDrop(formState, totalPowerAmps);
 
 const showToast = (message, variant = "success") => {
   toastMessage.value = message;
@@ -1469,6 +1472,21 @@ const handleReset = async () => {
                   readonly
                   :value="impedanceOhmPerM ?? ''"
                 />
+              </div>
+              <div class="mt-4 space-y-2">
+                <label class="label-text text-sm font-semibold" for="voltageDropPercent">
+                  % Caída de tensión
+                </label>
+                <input
+                  id="voltageDropPercent"
+                  type="number"
+                  class="input input-bordered w-full"
+                  readonly
+                  :value="voltageDropPercent ?? ''"
+                />
+                <p v-if="voltageDropMessage" class="text-xs text-base-content/70">
+                  {{ voltageDropMessage }}
+                </p>
               </div>
               <pre class="mt-3 flex-1 overflow-y-auto rounded-md bg-base-100 p-3 text-xs text-base-content">
 {{ formattedState }}
