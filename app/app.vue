@@ -1490,93 +1490,97 @@ const handleReset = async () => {
                   {{ voltageDropMessage }}
                 </p>
               </div>
-              <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'" class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="supportsSO4">
-                  Soportes (SO-4)
-                </label>
-                <input
-                  id="supportsSO4"
-                  type="number"
-                  class="input input-bordered w-full"
-                  readonly
-                  :value="supportsSO4 ?? ''"
-                />
+              <div v-if="voltageDropMessage !== 'SE PUEDE OFERTAR ESTA LÍNEA (<3%)'">
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="supportsSO4">
+                    Soportes (SO-4)
+                  </label>
+                  <input
+                    id="supportsSO4"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="supportsSO4 ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="empalmesEMP4">
+                    Empalmes (EMP-4)
+                  </label>
+                  <input
+                    id="empalmesEMP4"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="empalmesEMP4 ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="alimentacionExtremaRef">
+                    Alimentación extrema (desde 40 A hasta 140 A)
+                  </label>
+                  <input
+                    id="alimentacionExtremaRef"
+                    type="text"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="alimentacionExtremaRef ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="alimentacion160200">
+                    Alimentación para 160-200 A
+                  </label>
+                  <select id="alimentacion160200" class="select select-bordered w-full">
+                    <option value="-">-</option>
+                    <option value="AG-4-1xM25 (1 cable orificio de 13-18 mm)">
+                      AG-4-1xM25 (1 cable orificio de 13-18 mm)
+                    </option>
+                    <option value="AG-4-1xM32 (1 cable orificio de 18-25 mm)">
+                      AG-4-1xM32 (1 cable orificio de 18-25 mm)
+                    </option>
+                    <option value="AG-4-1xM40 (1 cable orificio de 22-32 mm)">
+                      AG-4-1xM40 (1 cable orificio de 22-32 mm)
+                    </option>
+                    <option value="AG-4-1xM63 (1 cable orificio de 34-44 mm)">
+                      AG-4-1xM63 (1 cable orificio de 34-44 mm)
+                    </option>
+                    <option value="AG-4-4xM25 (4 cables orificio de 13-18 mm)">
+                      AG-4-4xM25 (4 cables orificio de 13-18 mm)
+                    </option>
+                    <option value="AG-4-4xM32 (4 cables orificio de 18-25 mm)">
+                      AG-4-4xM32 (4 cables orificio de 18-25 mm)
+                    </option>
+                  </select>
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="puntoFijoPF4">
+                    Punto Fijo (PF-4)
+                  </label>
+                  <input
+                    id="puntoFijoPF4"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    value="1"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="tapaExtremaTE4">
+                    Tapa Extrema (TE-4)
+                  </label>
+                  <input
+                    id="tapaExtremaTE4"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    value="1"
+                  />
+                </div>
               </div>
-              <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="empalmesEMP4">
-                  Empalmes (EMP-4)
-                </label>
-                <input
-                  id="empalmesEMP4"
-                  type="number"
-                  class="input input-bordered w-full"
-                  readonly
-                  :value="empalmesEMP4 ?? ''"
-                />
-              </div>
-              <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="alimentacionExtremaRef">
-                  Alimentación extrema (desde 40 A hasta 140 A)
-                </label>
-                <input
-                  id="alimentacionExtremaRef"
-                  type="text"
-                  class="input input-bordered w-full"
-                  readonly
-                  :value="alimentacionExtremaRef ?? ''"
-                />
-              </div>
-              <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="alimentacion160200">
-                  Alimentación para 160-200 A
-                </label>
-                <select id="alimentacion160200" class="select select-bordered w-full">
-                  <option value="-">-</option>
-                  <option value="AG-4-1xM25 (1 cable orificio de 13-18 mm)">
-                    AG-4-1xM25 (1 cable orificio de 13-18 mm)
-                  </option>
-                  <option value="AG-4-1xM32 (1 cable orificio de 18-25 mm)">
-                    AG-4-1xM32 (1 cable orificio de 18-25 mm)
-                  </option>
-                  <option value="AG-4-1xM40 (1 cable orificio de 22-32 mm)">
-                    AG-4-1xM40 (1 cable orificio de 22-32 mm)
-                  </option>
-                  <option value="AG-4-1xM63 (1 cable orificio de 34-44 mm)">
-                    AG-4-1xM63 (1 cable orificio de 34-44 mm)
-                  </option>
-                  <option value="AG-4-4xM25 (4 cables orificio de 13-18 mm)">
-                    AG-4-4xM25 (4 cables orificio de 13-18 mm)
-                  </option>
-                  <option value="AG-4-4xM32 (4 cables orificio de 18-25 mm)">
-                    AG-4-4xM32 (4 cables orificio de 18-25 mm)
-                  </option>
-                </select>
-              </div>
-              <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="puntoFijoPF4">
-                  Punto Fijo (PF-4)
-                </label>
-                <input
-                  id="puntoFijoPF4"
-                  type="number"
-                  class="input input-bordered w-full"
-                  readonly
-                  value="1"
-                />
-              </div>
-              <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="tapaExtremaTE4">
-                  Tapa Extrema (TE-4)
-                </label>
-                <input
-                  id="tapaExtremaTE4"
-                  type="number"
-                  class="input input-bordered w-full"
-                  readonly
-                  value="1"
-                />
-              </div>
-              <pre class="mt-3 flex-1 overflow-y-auto rounded-md bg-base-100 p-3 text-xs text-base-content">
+              <pre
+                class="mt-3 hidden flex-1 overflow-y-auto rounded-md bg-base-100 p-3 text-xs text-base-content"
+              >
 {{ formattedState }}
               </pre>
             </div>
