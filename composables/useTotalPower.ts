@@ -11,6 +11,7 @@ type Grua = {
 type FormState = {
   max_simultaneous_power_kw: number | null;
   power_mode: string;
+  voltage: number | null;
 };
 
 const getInstalledPowerWatts = (grua: Grua) => {
@@ -65,8 +66,18 @@ export const useTotalPower = (
   const totalPowerWatts = computed(() =>
     calculateTotalPowerWatts(formState, gruas.value, gruasCount.value)
   );
+  const totalPowerAmps = computed(() => {
+    const voltage = Number(formState.voltage);
+    if (!Number.isFinite(voltage) || voltage <= 0) {
+      return 0;
+    }
+    return Number(
+      (totalPowerWatts.value / (Math.sqrt(3) * voltage * 0.8)).toFixed(2)
+    );
+  });
 
   return {
     totalPowerWatts,
+    totalPowerAmps,
   };
 };
