@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { usePowerCalculations } from "../composables/usePowerCalculations";
 import { useSendModal } from "../composables/useSendModal";
+import { useTotalPower } from "../composables/useTotalPower";
 
 const STORAGE_KEY = "galarza2-config-state";
 const currentYear = new Date().getFullYear();
@@ -16,7 +17,7 @@ const createInitialFormState = () => ({
   fase: 3,
   ground: 1,
   neutral: 0,
-  total_distance: null,
+  total_distance: 80,
   type_of_line: "Línea recta",
   tramos: [
     { tramo_recto: null, radio: null, angulo: null, longitud: null },
@@ -32,7 +33,7 @@ const createInitialFormState = () => ({
   protected_line: "",
   min_temperature: null,
   max_temperature: null,
-  voltage: null,
+  voltage: 380,
   hertz: null,
   max_permissible_voltage_drop: null,
   power_mode: "simultanea",
@@ -46,6 +47,29 @@ const createInitialFormState = () => ({
   sketch_file: "",
   info: "",
 });
+
+const buildGrua = () => ({
+  servicios: {
+    "Elevación principal": { cv: null, kw: null, amp: null, ed: null },
+    "Elevación auxiliar": { cv: null, kw: null, amp: null, ed: null },
+    "Traslación grúa": { cv: null, kw: null, amp: null, ed: null },
+    "Traslación carro": { cv: null, kw: null, amp: null, ed: null },
+    "Otros servicios": { cv: null, kw: null, amp: null, ed: null },
+  },
+  tomacorrientes: "sin ítem",
+  brazo_arrastre: "sin ítem",
+});
+
+const getInitialConfigPayload = () => {
+  const baseState = createInitialFormState();
+  const count = Math.min(4, Math.max(1, Math.floor(Number(baseState.number_and_type_of_machines_to_feed) || 1)));
+  return {
+    ...baseState,
+    gruas: Array.from({ length: count }, () => buildGrua()),
+  };
+};
+
+const initialSerialized = JSON.stringify(getInitialConfigPayload());
 
 const formState = reactive(createInitialFormState());
 
@@ -78,18 +102,7 @@ const gruas = ref([]);
 const isHydrated = ref(false);
 const isResetting = ref(false);
 const lastSavedState = ref("");
-const initialState = ref("");
-const buildGrua = () => ({
-  servicios: {
-    "Elevación principal": { cv: null, kw: null, amp: null, ed: null },
-    "Elevación auxiliar": { cv: null, kw: null, amp: null, ed: null },
-    "Traslación grúa": { cv: null, kw: null, amp: null, ed: null },
-    "Traslación carro": { cv: null, kw: null, amp: null, ed: null },
-    "Otros servicios": { cv: null, kw: null, amp: null, ed: null },
-  },
-  tomacorrientes: "sin ítem",
-  brazo_arrastre: "sin ítem",
-});
+const initialState = ref(initialSerialized);
 
 const syncGruasLength = () => {
   const count = gruasCount.value;
@@ -177,7 +190,7 @@ const saveState = () => {
 onMounted(() => {
   loadStoredState();
   lastSavedState.value = JSON.stringify(buildConfigPayload());
-  initialState.value = lastSavedState.value;
+  initialState.value = initialSerialized;
   isHydrated.value = true;
 });
 
@@ -306,6 +319,8 @@ const isToastVisible = ref(false);
 const toastVariant = ref("success");
 let toastTimeout = null;
 
+const { totalPowerWatts } = useTotalPower(formState, gruas, gruasCount);
+
 const showToast = (message, variant = "success") => {
   toastMessage.value = message;
   toastVariant.value = variant;
@@ -328,7 +343,7 @@ const resetFormState = async () => {
     window.localStorage.removeItem(STORAGE_KEY);
   }
   lastSavedState.value = JSON.stringify(buildConfigPayload());
-  initialState.value = lastSavedState.value;
+  initialState.value = initialSerialized;
   await nextTick();
   isResetting.value = false;
 };
@@ -1520,6 +1535,18 @@ const handleInputValidation = (event) => {
             <div class="card-body flex h-full flex-col">
               <h2 class="card-title">Configuración</h2>
               <ConfigurationImage :config="formState" />
+              <div class="mt-4 space-y-2">
+                <label class="label-text text-sm font-semibold" for="totalPowerWatts">
+                  Potencia total (watios)
+                </label>
+                <input
+                  id="totalPowerWatts"
+                  type="number"
+                  class="input input-bordered w-full"
+                  readonly
+                  :value="totalPowerWatts"
+                />
+              </div>
               <pre class="mt-3 flex-1 overflow-y-auto rounded-md bg-base-100 p-3 text-xs text-base-content">
 {{ formattedState }}
               </pre>
