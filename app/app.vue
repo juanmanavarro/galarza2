@@ -5,6 +5,7 @@ import { useSendModal } from "../composables/useSendModal";
 import { useTotalPower } from "../composables/useTotalPower";
 import { useVoltageDrop } from "../composables/useVoltageDrop";
 import { useFormValidation } from "../composables/useFormValidation";
+import { useSupports } from "../composables/useSupports";
 
 const STORAGE_KEY = "galarza2-config-state";
 const currentYear = new Date().getFullYear();
@@ -259,6 +260,7 @@ const {
   voltageDropPercent,
   voltageDropMessage,
 } = useVoltageDrop(formState, totalPowerAmps);
+const { supportsSO4, empalmesEMP4 } = useSupports(formState, intensityToInstallAmp);
 
 const showToast = (message, variant = "success") => {
   toastMessage.value = message;
@@ -1487,6 +1489,30 @@ const handleReset = async () => {
                 <p v-if="voltageDropMessage" class="text-xs text-base-content/70">
                   {{ voltageDropMessage }}
                 </p>
+              </div>
+              <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'" class="mt-4 space-y-2">
+                <label class="label-text text-sm font-semibold" for="supportsSO4">
+                  Soportes (SO-4)
+                </label>
+                <input
+                  id="supportsSO4"
+                  type="number"
+                  class="input input-bordered w-full"
+                  readonly
+                  :value="supportsSO4 ?? ''"
+                />
+              </div>
+              <div class="mt-4 space-y-2">
+                <label class="label-text text-sm font-semibold" for="empalmesEMP4">
+                  Empalmes (EMP-4)
+                </label>
+                <input
+                  id="empalmesEMP4"
+                  type="number"
+                  class="input input-bordered w-full"
+                  readonly
+                  :value="empalmesEMP4 ?? ''"
+                />
               </div>
               <pre class="mt-3 flex-1 overflow-y-auto rounded-md bg-base-100 p-3 text-xs text-base-content">
 {{ formattedState }}
