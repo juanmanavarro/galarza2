@@ -31,8 +31,25 @@ export const useSupports = (
     return Math.ceil(supportsRaw);
   });
 
-    return {
-      supportsSO4,
+  const alimentacionExtremaRef = computed(() => {
+    const intensity = intensityToInstallAmp.value;
+    if (typeof intensity !== "number" || !Number.isFinite(intensity)) {
+      return null;
+    }
+    if (intensity < 70) {
+      return "AE-4";
+    }
+    if (intensity < 110) {
+      return "AE-4-100";
+    }
+    if (intensity < 150) {
+      return "AE-4-140";
+    }
+    return "Elegir según cable (desplegar abajo):";
+  });
+
+  return {
+    supportsSO4,
     empalmesEMP4: computed(() => {
       const lengthMeters = Number(formState.total_distance);
       if (!Number.isFinite(lengthMeters)) {
@@ -41,5 +58,6 @@ export const useSupports = (
       const empalmesRaw = lengthMeters / 4 - 1;
       return Math.ceil(empalmesRaw);
     }),
+    alimentacionExtremaRef,
   };
 };
