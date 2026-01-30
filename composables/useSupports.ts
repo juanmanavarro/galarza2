@@ -59,5 +59,12 @@ export const useSupports = (
       return Math.ceil(empalmesRaw);
     }),
     alimentacionExtremaRef,
+    su5001: computed(() => {
+      const supports = supportsSO4.value;
+      if (!Number.isFinite(supports)) {
+        return null;
+      }
+      return supports + 1;
+    }),
   };
 };

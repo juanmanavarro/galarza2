@@ -260,7 +260,10 @@ const {
   voltageDropPercent,
   voltageDropMessage,
 } = useVoltageDrop(formState, totalPowerAmps);
-const { supportsSO4, empalmesEMP4, alimentacionExtremaRef } = useSupports(formState, intensityToInstallAmp);
+const { supportsSO4, empalmesEMP4, alimentacionExtremaRef, su5001 } = useSupports(
+  formState,
+  intensityToInstallAmp
+);
 
 const showToast = (message, variant = "success") => {
   toastMessage.value = message;
@@ -1490,7 +1493,7 @@ const handleReset = async () => {
                   {{ voltageDropMessage }}
                 </p>
               </div>
-              <div v-if="voltageDropMessage !== 'SE PUEDE OFERTAR ESTA LÍNEA (<3%)'">
+              <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'">
                 <div class="mt-4 space-y-2">
                   <label class="label-text text-sm font-semibold" for="supportsSO4">
                     Soportes (SO-4)
@@ -1575,6 +1578,18 @@ const handleReset = async () => {
                     class="input input-bordered w-full"
                     readonly
                     value="1"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="su5001">
+                    SU-500-1
+                  </label>
+                  <input
+                    id="su5001"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="su5001 ?? ''"
                   />
                 </div>
               </div>
