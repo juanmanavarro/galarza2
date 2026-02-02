@@ -298,6 +298,7 @@ const intensityToInstallLine = computed(() => {
   }
   return "Consultar dpto. técnico";
 });
+const isConsultingLine = computed(() => intensityToInstallLine.value === "Consultar dpto. técnico");
 const voltageDropVoltsLine = computed(() => {
   const intensityNominal = Number(totalPowerAmps.value);
   const lengthMeters = Number(formState.total_distance);
@@ -331,7 +332,7 @@ const voltageDropPercentLine = computed(() => {
 const getVoltageDropPercentForLength = (lengthMeters) => {
   const intensityNominal = Number(totalPowerAmps.value);
   const nominalVoltage = Number(formState.voltage);
-  const intensityToInstall = intensityToInstallLine.value;
+  const intensityToInstall = intensityToInstallFeeding.value;
   if (!Number.isFinite(intensityNominal) || intensityNominal <= 0) {
     return null;
   }
@@ -1932,7 +1933,7 @@ const handleReset = async () => {
               </pre>
               </div>
             </div>
-            <div class="card bg-base-200 shadow-sm w-full">
+            <div v-if="voltageDropMessage !== 'SE PUEDE OFERTAR ESTA LÍNEA (<3%)'" class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
                 <h2 class="card-title">1. Incrementar intensidad de la linea</h2>
                 <div class="mt-4 space-y-2">
@@ -1956,7 +1957,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    :value="voltageDropPercentLine ?? ''"
+                    :value="isConsultingLine ? '' : voltageDropPercentLine ?? ''"
                   />
                   <p v-if="voltageDropMessageLine" class="text-xs text-base-content/70">
                     {{ voltageDropMessageLine }}
@@ -1971,7 +1972,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    :value="supportsSO4Line ?? ''"
+                    :value="isConsultingLine ? '' : supportsSO4Line ?? ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -1983,7 +1984,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    :value="empalmesEMP4Line ?? ''"
+                    :value="isConsultingLine ? '' : empalmesEMP4Line ?? ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -1995,14 +1996,19 @@ const handleReset = async () => {
                     type="text"
                     class="input input-bordered w-full"
                     readonly
-                    :value="alimentacionExtremaLine ?? ''"
+                    :value="isConsultingLine ? '' : alimentacionExtremaLine ?? ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
                   <label class="label-text text-sm font-semibold" for="alimentacion160200Line">
                     Alimentación para 160-200 A
                   </label>
-                  <select id="alimentacion160200Line" class="select select-bordered w-full">
+                  <select
+                    id="alimentacion160200Line"
+                    class="select select-bordered w-full"
+                    :value="isConsultingLine ? '' : undefined"
+                    :disabled="isConsultingLine"
+                  >
                     <option value=""></option>
                     <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
                       AG-4-1xM25 (1 cable, orificio de 13-18 mm)
@@ -2033,7 +2039,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    value="1"
+                    :value="isConsultingLine ? '' : 1"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -2045,7 +2051,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    value="1"
+                    :value="isConsultingLine ? '' : 1"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -2057,7 +2063,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    :value="su5001Line ?? ''"
+                    :value="isConsultingLine ? '' : su5001Line ?? ''"
                   />
                 </div>
                 <div class="mt-4 space-y-4">
@@ -2070,7 +2076,7 @@ const handleReset = async () => {
                           type="text"
                           class="input input-bordered w-full"
                           readonly
-                          :value="tomacorrientesByGrua[index - 1] ?? ''"
+                          :value="isConsultingLine ? '' : tomacorrientesByGrua[index - 1] ?? ''"
                         />
                       </div>
                       <div class="space-y-2">
@@ -2079,7 +2085,7 @@ const handleReset = async () => {
                           type="text"
                           class="input input-bordered w-full"
                           readonly
-                          :value="brazoArrastreByGrua[index - 1] ?? ''"
+                          :value="isConsultingLine ? '' : brazoArrastreByGrua[index - 1] ?? ''"
                         />
                       </div>
                     </div>
@@ -2087,7 +2093,7 @@ const handleReset = async () => {
                 </div>
               </div>
             </div>
-            <div class="card bg-base-200 shadow-sm w-full">
+            <div v-if="voltageDropMessage !== 'SE PUEDE OFERTAR ESTA LÍNEA (<3%)'" class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
                 <h2 class="card-title">
                   2. Alimentación intermedia<span v-if="recommendedFeedingType">: {{ recommendedFeedingType }}</span>
