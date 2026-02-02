@@ -1933,7 +1933,7 @@ const handleReset = async () => {
               </pre>
               </div>
             </div>
-            <div v-if="voltageDropMessage !== 'SE PUEDE OFERTAR ESTA LÍNEA (<3%)'" class="card bg-base-200 shadow-sm w-full">
+            <div v-if="voltageDropMessage === 'VER OPCIONES 1 Y 2'" class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
                 <h2 class="card-title">1. Incrementar intensidad de la linea</h2>
                 <div class="mt-4 space-y-2">
@@ -2093,7 +2093,7 @@ const handleReset = async () => {
                 </div>
               </div>
             </div>
-            <div v-if="voltageDropMessage !== 'SE PUEDE OFERTAR ESTA LÍNEA (<3%)'" class="card bg-base-200 shadow-sm w-full">
+            <div v-if="voltageDropMessage === 'VER OPCIONES 1 Y 2'" class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
                 <h2 class="card-title">
                   2. Alimentación intermedia<span v-if="recommendedFeedingType">: {{ recommendedFeedingType }}</span>
