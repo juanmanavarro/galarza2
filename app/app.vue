@@ -679,6 +679,7 @@ const handleReset = async () => {
     <main class="h-[calc(100vh-64px)] overflow-hidden pt-20 pb-2 mx-auto max-w-[1500px]">
       <div v-if="isHydrated" class="flex h-full min-h-0 gap-8">
         <section class="flex-1 h-full min-h-0 overflow-y-auto pr-2">
+          <h2 class="card-title">Configuración</h2>
           <form class="w-full space-y-8" @submit.prevent @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
@@ -1759,7 +1760,6 @@ const handleReset = async () => {
           <div class="flex flex-col gap-4">
             <div class="card bg-base-200 shadow-sm w-full">
               <div class="card-body flex flex-col">
-              <h2 class="card-title">Configuración</h2>
               <ConfigurationImage :config="formState" />
               <div class="mt-4 space-y-2">
                 <label class="label-text text-sm font-semibold" for="totalPowerWatts">
