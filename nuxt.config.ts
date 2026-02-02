@@ -8,7 +8,8 @@ export default defineNuxtConfig({
     head: {
       title: 'Configurador para líneas conductoras LM',
       link: [
-        { rel: 'icon', type: 'image/png', href: '/logo.png' }
+        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
       ]
     }
   },

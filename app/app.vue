@@ -29,12 +29,12 @@ const createInitialFormState = () => ({
     { tramo_recto: null, radio: null, angulo: null, longitud: null },
     { tramo_recto: null, radio: null, angulo: null, longitud: null },
   ],
-  work_environment: "",
-  feeding_point_position: "",
+  work_environment: "Interior",
+  feeding_point_position: "extreme",
   feeding_point_position_distance: null,
-  environmental_condition: "",
+  environmental_condition: "normal",
   environmental_condition_corrosive: "",
-  protected_line: "",
+  protected_line: "0",
   min_temperature: null,
   max_temperature: null,
   voltage: 380,
@@ -194,8 +194,9 @@ const saveState = () => {
 
 onMounted(() => {
   loadStoredState();
-  lastSavedState.value = JSON.stringify(buildConfigPayload());
-  initialState.value = initialSerialized;
+  const hydratedState = JSON.stringify(buildConfigPayload());
+  lastSavedState.value = hydratedState;
+  initialState.value = hydratedState;
   isHydrated.value = true;
 });
 
@@ -624,6 +625,16 @@ const { supportsSO4, empalmesEMP4, alimentacionExtremaRef, su5001 } = useSupport
   intensityToInstallAmp
 );
 const { tomacorrientesByGrua, brazoArrastreByGrua } = useGruaAccessories(formState, gruas);
+const hasAnyRightPanelInput = computed(() => {
+  const hasGruaKw = gruas.value.some((grua) =>
+    Object.values(grua?.servicios ?? {}).some((servicio) => Number(servicio?.kw) > 0)
+  );
+  const hasMaxPower =
+    Number(formState.max_simultaneous_power_kw) > 0 ||
+    Number(formState.max_simultaneous_power_cv) > 0 ||
+    Number(formState.max_simultaneous_power_amp) > 0;
+  return hasGruaKw || hasMaxPower;
+});
 
 const showToast = (message, variant = "success") => {
   toastMessage.value = message;
@@ -646,8 +657,9 @@ const resetFormState = async () => {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(STORAGE_KEY);
   }
-  lastSavedState.value = JSON.stringify(buildConfigPayload());
-  initialState.value = initialSerialized;
+  const resetState = JSON.stringify(buildConfigPayload());
+  lastSavedState.value = resetState;
+  initialState.value = resetState;
   await nextTick();
   isResetting.value = false;
 };
@@ -669,7 +681,7 @@ const handleReset = async () => {
     <header class="navbar bg-base-200 px-6 fixed top-0 inset-x-0 z-50 h-16">
       <div class="relative mx-auto flex w-full max-w-[1500px] items-center">
         <a class="flex items-center gap-3 text-xl font-semibold tracking-wide" href="#">
-          <img src="/logo.webp" alt="Logo LM" class="h-11 w-11" />
+          <img src="/favicon.png" alt="Logo LM" class="h-11 w-11" />
         </a>
         <span class="absolute inset-x-0 text-center text-xl font-semibold tracking-wide">
           Configurador para líneas conductoras LM
@@ -1771,7 +1783,7 @@ const handleReset = async () => {
                   type="number"
                   class="input input-bordered w-full"
                   readonly
-                  :value="totalPowerWatts"
+                  :value="hasAnyRightPanelInput ? totalPowerWatts : ''"
                 />
               </div>
               <div class="mt-4 space-y-2">
@@ -1783,7 +1795,7 @@ const handleReset = async () => {
                   type="text"
                   class="input input-bordered w-full"
                   readonly
-                  :value="intensityToInstallAmp ?? ''"
+                  :value="hasAnyRightPanelInput ? intensityToInstallAmp ?? '' : ''"
                 />
               </div>
               <div class="mt-4 space-y-2">
@@ -1795,7 +1807,7 @@ const handleReset = async () => {
                   type="number"
                   class="input input-bordered w-full"
                   readonly
-                  :value="voltageDropPercent ?? ''"
+                  :value="hasAnyRightPanelInput ? voltageDropPercent ?? '' : ''"
                 />
                 <p v-if="voltageDropMessage" class="text-xs text-base-content/70">
                   {{ voltageDropMessage }}
@@ -1811,7 +1823,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    :value="supportsSO4 ?? ''"
+                    :value="hasAnyRightPanelInput ? supportsSO4 ?? '' : ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -1823,7 +1835,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    :value="empalmesEMP4 ?? ''"
+                    :value="hasAnyRightPanelInput ? empalmesEMP4 ?? '' : ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -1835,14 +1847,14 @@ const handleReset = async () => {
                     type="text"
                     class="input input-bordered w-full"
                     readonly
-                    :value="alimentacionExtremaRef ?? ''"
+                    :value="hasAnyRightPanelInput ? alimentacionExtremaRef ?? '' : ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
                   <label class="label-text text-sm font-semibold" for="alimentacion160200">
                     Alimentación para 160-200 A
                   </label>
-                  <select id="alimentacion160200" class="select select-bordered w-full">
+                  <select id="alimentacion160200" class="select select-bordered w-full" :disabled="!hasAnyRightPanelInput">
                     <option value="-">-</option>
                     <option value="AG-4-1xM25 (1 cable orificio de 13-18 mm)">
                       AG-4-1xM25 (1 cable orificio de 13-18 mm)
@@ -1873,7 +1885,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    value="1"
+                    :value="hasAnyRightPanelInput ? 1 : ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -1885,7 +1897,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    value="1"
+                    :value="hasAnyRightPanelInput ? 1 : ''"
                   />
                 </div>
                 <div class="mt-4 space-y-2">
@@ -1897,7 +1909,7 @@ const handleReset = async () => {
                     type="number"
                     class="input input-bordered w-full"
                     readonly
-                    :value="su5001 ?? ''"
+                    :value="hasAnyRightPanelInput ? su5001 ?? '' : ''"
                   />
                 </div>
               </div>
@@ -1911,7 +1923,7 @@ const handleReset = async () => {
                         type="text"
                         class="input input-bordered w-full"
                         readonly
-                        :value="tomacorrientesByGrua[index - 1] ?? ''"
+                        :value="hasAnyRightPanelInput ? tomacorrientesByGrua[index - 1] ?? '' : ''"
                       />
                     </div>
                     <div class="space-y-2">
@@ -1920,7 +1932,7 @@ const handleReset = async () => {
                         type="text"
                         class="input input-bordered w-full"
                         readonly
-                        :value="brazoArrastreByGrua[index - 1] ?? ''"
+                        :value="hasAnyRightPanelInput ? brazoArrastreByGrua[index - 1] ?? '' : ''"
                       />
                     </div>
                   </div>
