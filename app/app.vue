@@ -1416,18 +1416,6 @@ const handleReset = async () => {
                 />
               </div>
               <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="totalPowerAmps">
-                  Intensidad nominal (Amperios)
-                </label>
-                <input
-                  id="totalPowerAmps"
-                  type="number"
-                  class="input input-bordered w-full"
-                  readonly
-                  :value="totalPowerAmps"
-                />
-              </div>
-              <div class="mt-4 space-y-2">
                 <label class="label-text text-sm font-semibold" for="intensityToInstall">
                   Intensidad a instalar (Amperios)
                 </label>
@@ -1437,30 +1425,6 @@ const handleReset = async () => {
                   class="input input-bordered w-full"
                   readonly
                   :value="intensityToInstallAmp ?? ''"
-                />
-              </div>
-              <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="voltageDropVolts">
-                  Caída de tensión (Voltios)
-                </label>
-                <input
-                  id="voltageDropVolts"
-                  type="number"
-                  class="input input-bordered w-full"
-                  readonly
-                  :value="voltageDropVolts ?? ''"
-                />
-              </div>
-              <div class="mt-4 space-y-2">
-                <label class="label-text text-sm font-semibold" for="impedanceOhmPerM">
-                  Impedancia de los conductores (Ohm/m)
-                </label>
-                <input
-                  id="impedanceOhmPerM"
-                  type="number"
-                  class="input input-bordered w-full"
-                  readonly
-                  :value="impedanceOhmPerM ?? ''"
                 />
               </div>
               <div class="mt-4 space-y-2">
