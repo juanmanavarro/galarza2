@@ -253,6 +253,17 @@ const isToastVisible = ref(false);
 const toastVariant = ref("success");
 let toastTimeout = null;
 
+const INTENSITY_OPTIONS = [40, 60, 80, 100, 140, 160, 200];
+const IMPEDANCE_BY_INTENSITY_OHM_PER_M = {
+  40: 0.002,
+  60: 0.00175,
+  80: 0.00118,
+  100: 0.001,
+  140: 0.00075,
+  160: 0.00065,
+  200: 0.00055,
+};
+
 const { totalPowerWatts, totalPowerAmps } = useTotalPower(formState, gruas, gruasCount);
 const {
   voltageDropVolts,
@@ -261,6 +272,352 @@ const {
   voltageDropPercent,
   voltageDropMessage,
 } = useVoltageDrop(formState, totalPowerAmps);
+const intensityToInstallLine = computed(() => {
+  const intensityNominal = Number(totalPowerAmps.value);
+  if (!Number.isFinite(intensityNominal)) {
+    return null;
+  }
+  const lengthMeters = Number(formState.total_distance);
+  const nominalVoltage = Number(formState.voltage);
+  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
+    return null;
+  }
+  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
+    return null;
+  }
+  for (const option of INTENSITY_OPTIONS) {
+    const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[option];
+    if (!Number.isFinite(impedance)) {
+      continue;
+    }
+    const dropVolts = Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
+    const dropPercent = (dropVolts / nominalVoltage) * 100;
+    if (intensityNominal < option && dropPercent < 3) {
+      return option;
+    }
+  }
+  return "Consultar dpto. técnico";
+});
+const voltageDropVoltsLine = computed(() => {
+  const intensityNominal = Number(totalPowerAmps.value);
+  const lengthMeters = Number(formState.total_distance);
+  const intensityToInstall = intensityToInstallLine.value;
+  if (!Number.isFinite(intensityNominal) || intensityNominal <= 0) {
+    return null;
+  }
+  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
+    return null;
+  }
+  if (typeof intensityToInstall !== "number") {
+    return null;
+  }
+  const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[intensityToInstall];
+  if (!Number.isFinite(impedance)) {
+    return null;
+  }
+  return Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
+});
+const voltageDropPercentLine = computed(() => {
+  const dropVolts = voltageDropVoltsLine.value;
+  const nominalVoltage = Number(formState.voltage);
+  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
+    return null;
+  }
+  if (!Number.isFinite(dropVolts)) {
+    return null;
+  }
+  return (dropVolts / nominalVoltage) * 100;
+});
+const getVoltageDropPercentForLength = (lengthMeters) => {
+  const intensityNominal = Number(totalPowerAmps.value);
+  const nominalVoltage = Number(formState.voltage);
+  const intensityToInstall = intensityToInstallLine.value;
+  if (!Number.isFinite(intensityNominal) || intensityNominal <= 0) {
+    return null;
+  }
+  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
+    return null;
+  }
+  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
+    return null;
+  }
+  if (typeof intensityToInstall !== "number") {
+    return null;
+  }
+  const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[intensityToInstall];
+  if (!Number.isFinite(impedance)) {
+    return null;
+  }
+  const dropVolts = Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
+  return (dropVolts / nominalVoltage) * 100;
+};
+const getVoltageDropVoltsForLength = (lengthMeters) => {
+  const intensityNominal = Number(totalPowerAmps.value);
+  const intensityToInstall = intensityToInstallFeeding.value;
+  if (!Number.isFinite(intensityNominal) || intensityNominal <= 0) {
+    return null;
+  }
+  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
+    return null;
+  }
+  if (typeof intensityToInstall !== "number") {
+    return null;
+  }
+  const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[intensityToInstall];
+  if (!Number.isFinite(impedance)) {
+    return null;
+  }
+  return Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
+};
+const voltageDropPercentL2 = computed(() =>
+  getVoltageDropPercentForLength(Number(formState.total_distance) / 2)
+);
+const voltageDropPercentL4 = computed(() =>
+  getVoltageDropPercentForLength(Number(formState.total_distance) / 4)
+);
+const voltageDropPercentL6 = computed(() =>
+  getVoltageDropPercentForLength(Number(formState.total_distance) / 6)
+);
+const recommendedFeedingType = computed(() => {
+  const dropL2 = voltageDropPercentL2.value;
+  if (Number.isFinite(dropL2) && dropL2 < 3) {
+    return "ALIMENTACIÓN CENTRAL = L/2";
+  }
+  const dropL4 = voltageDropPercentL4.value;
+  if (Number.isFinite(dropL4) && dropL4 < 3) {
+    return "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4";
+  }
+  const dropL6 = voltageDropPercentL6.value;
+  if (Number.isFinite(dropL6) && dropL6 < 3) {
+    return "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6";
+  }
+  return null;
+});
+const selectedFeedingLengthMeters = computed(() => {
+  const lengthMeters = Number(formState.total_distance);
+  if (!Number.isFinite(lengthMeters)) {
+    return null;
+  }
+  switch (recommendedFeedingType.value) {
+    case "ALIMENTACIÓN CENTRAL = L/2":
+      return lengthMeters / 2;
+    case "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4":
+      return lengthMeters / 4;
+    case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
+      return lengthMeters / 6;
+    default:
+      return null;
+  }
+});
+const voltageDropPercentIntermedia = computed(() => {
+  const dropVolts = getVoltageDropVoltsForLength(selectedFeedingLengthMeters.value);
+  const nominalVoltage = Number(formState.voltage);
+  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
+    return null;
+  }
+  if (!Number.isFinite(dropVolts)) {
+    return null;
+  }
+  return (dropVolts / nominalVoltage) * 100;
+});
+const voltageDropPercentIntermediaDisplay = computed(() => {
+  const value = voltageDropPercentIntermedia.value;
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+  return value.toFixed(2);
+});
+const intensityToInstallFeeding = computed(() => {
+  const intensityNominal = Number(totalPowerAmps.value);
+  if (!Number.isFinite(intensityNominal)) {
+    return null;
+  }
+  if (intensityNominal < 40) {
+    return 40;
+  }
+  if (intensityNominal < 60) {
+    return 60;
+  }
+  if (intensityNominal < 80) {
+    return 80;
+  }
+  if (intensityNominal < 100) {
+    return 100;
+  }
+  if (intensityNominal < 140) {
+    return 140;
+  }
+  if (intensityNominal < 160) {
+    return 160;
+  }
+  if (intensityNominal < 200) {
+    return 200;
+  }
+  return 0;
+});
+const supportsSO4Intermedia = computed(() => {
+  const intensityToInstall = intensityToInstallFeeding.value;
+  const lengthMeters = Number(formState.total_distance);
+  if (typeof intensityToInstall !== "number") {
+    return null;
+  }
+  if (!Number.isFinite(lengthMeters)) {
+    return null;
+  }
+  let supportsRaw = 0;
+  if (intensityToInstall < 101) {
+    supportsRaw = lengthMeters / 2;
+  } else if (intensityToInstall > 102) {
+    supportsRaw = lengthMeters * (3 / 4);
+  }
+  return Math.ceil(supportsRaw);
+});
+const empalmesEMP4Intermedia = computed(() => {
+  const lengthMeters = Number(formState.total_distance);
+  if (!Number.isFinite(lengthMeters)) {
+    return null;
+  }
+  let empalmesRaw = 0;
+  switch (recommendedFeedingType.value) {
+    case "ALIMENTACIÓN CENTRAL = L/2":
+      empalmesRaw = lengthMeters / 4 - 2;
+      break;
+    case "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4":
+      empalmesRaw = lengthMeters / 4 - 1;
+      break;
+    case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
+      empalmesRaw = lengthMeters / 4 - 3;
+      break;
+    default:
+      empalmesRaw = 0;
+      break;
+  }
+  return Math.ceil(empalmesRaw);
+});
+const alimentacionUnidadesIntermedia = computed(() => {
+  const dropL2 = voltageDropPercentL2.value;
+  if (Number.isFinite(dropL2) && dropL2 < 3) {
+    return 1;
+  }
+  const dropL4 = voltageDropPercentL4.value;
+  if (Number.isFinite(dropL4) && dropL4 < 3) {
+    return 2;
+  }
+  const dropL6 = voltageDropPercentL6.value;
+  if (Number.isFinite(dropL6) && dropL6 < 3) {
+    return 2;
+  }
+  return null;
+});
+const alimentacionInteriorIntermedia = computed(() => {
+  const intensityToInstall = intensityToInstallFeeding.value;
+  if (typeof intensityToInstall !== "number") {
+    return null;
+  }
+  if (intensityToInstall < 70) {
+    return "AI-4";
+  }
+  if (intensityToInstall < 110) {
+    return "AI-4-100";
+  }
+  if (intensityToInstall < 150) {
+    return "AI-4-140";
+  }
+  return "Elegir según cable (desplegar abajo):";
+});
+const puntoFijoPF4Intermedia = computed(() => {
+  const dropL2 = voltageDropPercentL2.value;
+  if (Number.isFinite(dropL2) && dropL2 < 3) {
+    return 2;
+  }
+  const dropL4 = voltageDropPercentL4.value;
+  if (Number.isFinite(dropL4) && dropL4 < 3) {
+    return 1;
+  }
+  const dropL6 = voltageDropPercentL6.value;
+  if (Number.isFinite(dropL6) && dropL6 < 3) {
+    return 3;
+  }
+  return null;
+});
+const tapaExtremaTE4Intermedia = computed(() => {
+  const dropL2 = voltageDropPercentL2.value;
+  if (Number.isFinite(dropL2) && dropL2 < 3) {
+    return 2;
+  }
+  const dropL4 = voltageDropPercentL4.value;
+  if (Number.isFinite(dropL4) && dropL4 < 3) {
+    return 0;
+  }
+  const dropL6 = voltageDropPercentL6.value;
+  if (Number.isFinite(dropL6) && dropL6 < 3) {
+    return 0;
+  }
+  return null;
+});
+const su5001Intermedia = computed(() => {
+  if (!Number.isFinite(supportsSO4Intermedia.value)) {
+    return null;
+  }
+  if (!Number.isFinite(puntoFijoPF4Intermedia.value)) {
+    return null;
+  }
+  return supportsSO4Intermedia.value + puntoFijoPF4Intermedia.value;
+});
+const voltageDropMessageLine = computed(() => {
+  const dropPercent = voltageDropPercentLine.value;
+  if (!Number.isFinite(dropPercent)) {
+    return null;
+  }
+  return dropPercent < 3 ? "SE PUEDE OFERTAR ESTA LÍNEA (<3%)" : "VER OPCIONES";
+});
+const supportsSO4Line = computed(() => {
+  const intensityToInstall = intensityToInstallLine.value;
+  const lengthMeters = Number(formState.total_distance);
+  if (typeof intensityToInstall !== "number") {
+    return null;
+  }
+  if (!Number.isFinite(lengthMeters)) {
+    return null;
+  }
+  let supportsRaw = 0;
+  if (intensityToInstall < 101) {
+    supportsRaw = lengthMeters / 2;
+  } else if (intensityToInstall > 102) {
+    supportsRaw = lengthMeters * (3 / 4);
+  }
+  return Math.ceil(supportsRaw);
+});
+const empalmesEMP4Line = computed(() => {
+  const lengthMeters = Number(formState.total_distance);
+  if (!Number.isFinite(lengthMeters)) {
+    return null;
+  }
+  const empalmesRaw = lengthMeters / 4 - 1;
+  return Math.ceil(empalmesRaw);
+});
+const alimentacionExtremaLine = computed(() => {
+  const intensityToInstall = intensityToInstallLine.value;
+  if (typeof intensityToInstall !== "number") {
+    return null;
+  }
+  if (intensityToInstall < 70) {
+    return "AE-4";
+  }
+  if (intensityToInstall < 110) {
+    return "AE-4-100";
+  }
+  if (intensityToInstall < 150) {
+    return "AE-4-140";
+  }
+  return "Elegir según cable (desplegar abajo):";
+});
+const su5001Line = computed(() => {
+  if (!Number.isFinite(supportsSO4Line.value)) {
+    return null;
+  }
+  return supportsSO4Line.value + 1;
+});
 const { supportsSO4, empalmesEMP4, alimentacionExtremaRef, su5001 } = useSupports(
   formState,
   intensityToInstallAmp
@@ -1399,8 +1756,9 @@ const handleReset = async () => {
           </form>
         </section>
         <aside class="flex-1 h-full min-h-0 overflow-y-auto pr-2">
-          <div class="card bg-base-200 shadow-sm w-full h-full">
-            <div class="card-body flex h-full flex-col">
+          <div class="flex flex-col gap-4">
+            <div class="card bg-base-200 shadow-sm w-full">
+              <div class="card-body flex flex-col">
               <h2 class="card-title">Configuración</h2>
               <ConfigurationImage :config="formState" />
               <div class="mt-4 space-y-2">
@@ -1572,6 +1930,328 @@ const handleReset = async () => {
               >
 {{ formattedState }}
               </pre>
+              </div>
+            </div>
+            <div class="card bg-base-200 shadow-sm w-full">
+              <div class="card-body">
+                <h2 class="card-title">1. Incrementar intensidad de la linea</h2>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="intensityToInstallLine">
+                    Intensidad (Amperios) a INSTALAR
+                  </label>
+                  <input
+                    id="intensityToInstallLine"
+                    type="text"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="intensityToInstallLine ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="voltageDropPercent">
+                    % Caída de tensión
+                  </label>
+                  <input
+                    id="voltageDropPercent"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="voltageDropPercentLine ?? ''"
+                  />
+                  <p v-if="voltageDropMessageLine" class="text-xs text-base-content/70">
+                    {{ voltageDropMessageLine }}
+                  </p>
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="supportsSO4Line">
+                    Soportes (SO-4)
+                  </label>
+                  <input
+                    id="supportsSO4Line"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="supportsSO4Line ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="empalmesEMP4Line">
+                    Empalmes (EMP-4)
+                  </label>
+                  <input
+                    id="empalmesEMP4Line"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="empalmesEMP4Line ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="alimentacionExtremaLine">
+                    Alimentación extrema (desde 40 A hasta 140 A)
+                  </label>
+                  <input
+                    id="alimentacionExtremaLine"
+                    type="text"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="alimentacionExtremaLine ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="alimentacion160200Line">
+                    Alimentación para 160-200 A
+                  </label>
+                  <select id="alimentacion160200Line" class="select select-bordered w-full">
+                    <option value=""></option>
+                    <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
+                      AG-4-1xM25 (1 cable, orificio de 13-18 mm)
+                    </option>
+                    <option value="AG-4-1xM32 (1 cable, orificio de 18-25 mm)">
+                      AG-4-1xM32 (1 cable, orificio de 18-25 mm)
+                    </option>
+                    <option value="AG-4-1xM40 (1 cable, orificio de 22-32 mm)">
+                      AG-4-1xM40 (1 cable, orificio de 22-32 mm)
+                    </option>
+                    <option value="AG-4-1xM63 (1 cable, orificio de 34-44 mm)">
+                      AG-4-1xM63 (1 cable, orificio de 34-44 mm)
+                    </option>
+                    <option value="AG-4-4xM25 (4 cables, orificio de 13-18 mm)">
+                      AG-4-4xM25 (4 cables, orificio de 13-18 mm)
+                    </option>
+                    <option value="AG-4-4xM32 (4 cables, orificio de 18-25 mm)">
+                      AG-4-4xM32 (4 cables, orificio de 18-25 mm)
+                    </option>
+                  </select>
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="puntoFijoPF4Line">
+                    Punto Fijo (PF-4)
+                  </label>
+                  <input
+                    id="puntoFijoPF4Line"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    value="1"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Line">
+                    Tapa Extrema (TE-4)
+                  </label>
+                  <input
+                    id="tapaExtremaTE4Line"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    value="1"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="su5001Line">
+                    SU-500-1
+                  </label>
+                  <input
+                    id="su5001Line"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="su5001Line ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-4">
+                  <div v-for="index in gruasCount" :key="`grua-linea-${index}`" class="space-y-2">
+                    <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <div class="space-y-2">
+                        <span class="label-text">Tomacorrientes</span>
+                        <input
+                          type="text"
+                          class="input input-bordered w-full"
+                          readonly
+                          :value="tomacorrientesByGrua[index - 1] ?? ''"
+                        />
+                      </div>
+                      <div class="space-y-2">
+                        <span class="label-text">Brazo arrastre</span>
+                        <input
+                          type="text"
+                          class="input input-bordered w-full"
+                          readonly
+                          :value="brazoArrastreByGrua[index - 1] ?? ''"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card bg-base-200 shadow-sm w-full">
+              <div class="card-body">
+                <h2 class="card-title">
+                  2. Alimentación intermedia<span v-if="recommendedFeedingType">: {{ recommendedFeedingType }}</span>
+                </h2>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="intensityToInstallFeeding">
+                    Intensidad (Amperios) a INSTALAR
+                  </label>
+                  <input
+                    id="intensityToInstallFeeding"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="intensityToInstallFeeding ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="voltageDropPercentIntermedia">
+                    % Caída de tensión
+                  </label>
+                  <input
+                    id="voltageDropPercentIntermedia"
+                    type="text"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="voltageDropPercentIntermediaDisplay"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="supportsSO4Intermedia">
+                    Soportes (SO-4)
+                  </label>
+                  <input
+                    id="supportsSO4Intermedia"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="supportsSO4Intermedia ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="empalmesEMP4Intermedia">
+                    Empalmes (EMP-4)
+                  </label>
+                  <input
+                    id="empalmesEMP4Intermedia"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="empalmesEMP4Intermedia ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="alimentacionUnidadesIntermedia">
+                    Alimentación (unidades)
+                  </label>
+                  <input
+                    id="alimentacionUnidadesIntermedia"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="alimentacionUnidadesIntermedia ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="alimentacionInteriorIntermedia">
+                    Alimentación  (desde 40 A hasta 140 A) (tipo )
+                  </label>
+                  <input
+                    id="alimentacionInteriorIntermedia"
+                    type="text"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="alimentacionInteriorIntermedia ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="alimentacion160200Intermedia">
+                    Alimentación para 160-200 A
+                  </label>
+                  <select id="alimentacion160200Intermedia" class="select select-bordered w-full">
+                    <option value=""></option>
+                    <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
+                      AG-4-1xM25 (1 cable, orificio de 13-18 mm)
+                    </option>
+                    <option value="AG-4-1xM32 (1 cable, orificio de 18-25 mm)">
+                      AG-4-1xM32 (1 cable, orificio de 18-25 mm)
+                    </option>
+                    <option value="AG-4-1xM40 (1 cable, orificio de 22-32 mm)">
+                      AG-4-1xM40 (1 cable, orificio de 22-32 mm)
+                    </option>
+                    <option value="AG-4-1xM63 (1 cable, orificio de 34-44 mm)">
+                      AG-4-1xM63 (1 cable, orificio de 34-44 mm)
+                    </option>
+                    <option value="AG-4-4xM25 (4 cables, orificio de 13-18 mm)">
+                      AG-4-4xM25 (4 cables, orificio de 13-18 mm)
+                    </option>
+                    <option value="AG-4-4xM32 (4 cables, orificio de 18-25 mm)">
+                      AG-4-4xM32 (4 cables, orificio de 18-25 mm)
+                    </option>
+                  </select>
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="puntoFijoPF4Intermedia">
+                    Punto Fijo (PF-4)
+                  </label>
+                  <input
+                    id="puntoFijoPF4Intermedia"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="puntoFijoPF4Intermedia ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Intermedia">
+                    Tapa Extrema (TE-4)
+                  </label>
+                  <input
+                    id="tapaExtremaTE4Intermedia"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="tapaExtremaTE4Intermedia ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-2">
+                  <label class="label-text text-sm font-semibold" for="su5001Intermedia">
+                    SU-500-1
+                  </label>
+                  <input
+                    id="su5001Intermedia"
+                    type="number"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="su5001Intermedia ?? ''"
+                  />
+                </div>
+                <div class="mt-4 space-y-4">
+                  <div v-for="index in gruasCount" :key="`grua-intermedia-${index}`" class="space-y-2">
+                    <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <div class="space-y-2">
+                        <span class="label-text">Tomacorrientes</span>
+                        <input
+                          type="text"
+                          class="input input-bordered w-full"
+                          readonly
+                          :value="tomacorrientesByGrua[index - 1] ?? ''"
+                        />
+                      </div>
+                      <div class="space-y-2">
+                        <span class="label-text">Brazo arrastre</span>
+                        <input
+                          type="text"
+                          class="input input-bordered w-full"
+                          readonly
+                          :value="brazoArrastreByGrua[index - 1] ?? ''"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
