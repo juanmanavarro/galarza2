@@ -9,6 +9,8 @@ import { useSupports } from "../composables/useSupports";
 import { useGruaAccessories } from "../composables/useGruaAccessories";
 
 const STORAGE_KEY = "galarza2-config-state";
+const AUTH_STORAGE_KEY = "galarza2-auth-unlocked";
+const ACCESS_PASSWORD = "galarz62024";
 const currentYear = new Date().getFullYear();
 
 const createInitialFormState = () => ({
@@ -105,6 +107,9 @@ const maximaPotenciaTipo = computed({
 
 const gruas = ref([]);
 const isHydrated = ref(false);
+const isUnlocked = ref(false);
+const accessPassword = ref("");
+const accessError = ref("");
 const isResetting = ref(false);
 const lastSavedState = ref("");
 const initialState = ref(initialSerialized);
@@ -192,7 +197,28 @@ const saveState = () => {
   lastSavedState.value = serialized;
 };
 
+const loadAuthState = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const unlocked = window.localStorage.getItem(AUTH_STORAGE_KEY);
+  isUnlocked.value = unlocked === "true";
+};
+
+const handleUnlock = () => {
+  accessError.value = "";
+  if (accessPassword.value.trim() !== ACCESS_PASSWORD) {
+    accessError.value = "Contraseña incorrecta";
+    return;
+  }
+  isUnlocked.value = true;
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(AUTH_STORAGE_KEY, "true");
+  }
+};
+
 onMounted(() => {
+  loadAuthState();
   loadStoredState();
   const hydratedState = JSON.stringify(buildConfigPayload());
   lastSavedState.value = hydratedState;
@@ -677,7 +703,31 @@ const handleReset = async () => {
 </script>
 
 <template>
-  <div class="h-screen overflow-hidden bg-base-100 flex flex-col" data-theme="light">
+  <div v-if="!isUnlocked" class="min-h-screen bg-base-200 flex items-center justify-center px-6" data-theme="light">
+    <div class="card w-full max-w-md bg-base-100 shadow-lg">
+      <div class="card-body space-y-4">
+        <div class="space-y-1">
+          <h1 class="text-xl font-semibold text-base-content">Acceso protegido</h1>
+          <p class="text-sm text-base-content/70">Introduce la contraseña para continuar.</p>
+        </div>
+        <div class="space-y-2">
+          <label class="label-text text-sm font-semibold" for="accessPassword">Contraseña</label>
+          <input
+            id="accessPassword"
+            type="password"
+            class="input input-bordered w-full"
+            v-model="accessPassword"
+            @keydown.enter="handleUnlock"
+          />
+          <p v-if="accessError" class="text-xs text-error">{{ accessError }}</p>
+        </div>
+        <button type="button" class="btn btn-primary w-full" @click="handleUnlock">
+          Entrar
+        </button>
+      </div>
+    </div>
+  </div>
+  <div v-else class="h-screen overflow-hidden bg-base-100 flex flex-col" data-theme="light">
     <header class="navbar bg-base-200 px-6 fixed top-0 inset-x-0 z-50 h-16">
       <div class="relative mx-auto flex w-full max-w-[1500px] items-center">
         <a class="flex items-center gap-3 text-xl font-semibold tracking-wide" href="#">
