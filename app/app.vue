@@ -651,6 +651,9 @@ const { supportsSO4, empalmesEMP4, alimentacionExtremaRef, su5001 } = useSupport
   intensityToInstallAmp
 );
 const { tomacorrientesByGrua, brazoArrastreByGrua } = useGruaAccessories(formState, gruas);
+const shouldShowRightPanelCalculations = computed(
+  () => tipoRecorrido.value === "Línea recta" && formState.work_environment === "Interior"
+);
 const hasAnyRightPanelInput = computed(() => {
   const hasGruaKw = gruas.value.some((grua) =>
     Object.values(grua?.servicios ?? {}).some((servicio) => Number(servicio?.kw) > 0)
@@ -919,32 +922,34 @@ const handleReset = async () => {
               <p v-if="errors.total_distance" class="text-sm text-error">
                 {{ errors.total_distance }}
               </p>
-              <div class="space-y-2">
-                <label class="flex items-center gap-3">
-                  <input
-                    v-model="tipoRecorrido"
-                    type="radio"
-                    name="type_of_line"
-                    value="Línea recta"
-                    class="radio radio-primary"
-                    required
-                  />
-                  <span>Línea recta</span>
-                </label>
-                <label class="flex items-center gap-3">
-                  <input
-                    v-model="tipoRecorrido"
-                    type="radio"
-                    name="type_of_line"
-                    value="Línea curva"
-                    class="radio radio-primary"
-                  />
-                  <span>Línea curva</span>
-                </label>
-                <p class="label-text">
+              <div class="space-y-3">
+                <h2 class="text-base font-semibold">
                   Tipo de recorrido
                   <span class="text-error"> *</span>
-                </p>
+                </h2>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-3">
+                    <input
+                      v-model="tipoRecorrido"
+                      type="radio"
+                      name="type_of_line"
+                      value="Línea recta"
+                      class="radio radio-primary"
+                      required
+                    />
+                    <span>Línea recta</span>
+                  </label>
+                  <label class="flex items-center gap-3">
+                    <input
+                      v-model="tipoRecorrido"
+                      type="radio"
+                      name="type_of_line"
+                      value="Línea curva"
+                      class="radio radio-primary"
+                    />
+                    <span>Línea curva</span>
+                  </label>
+                </div>
                 <p v-if="errors.type_of_line" class="text-sm text-error">
                   {{ errors.type_of_line }}
                 </p>
@@ -1827,7 +1832,7 @@ const handleReset = async () => {
               </div>
             </section>
           </div>
-          <div class="flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6">
+          <div v-if="shouldShowRightPanelCalculations" class="flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6">
             <section class="card bg-base-200 shadow-sm w-full">
               <div class="card-body flex flex-col">
                 <div class="mt-4 space-y-2">
@@ -2331,6 +2336,15 @@ const handleReset = async () => {
                 </div>
               </div>
             </div>
+          </div>
+          <div v-else class="flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6">
+            <section class="card bg-base-200 shadow-sm w-full">
+              <div class="card-body">
+                <p class="text-sm text-base-content/70">
+                  Por ahora, los cálculos solo están implementados para “Línea recta” y “Interior”.
+                </p>
+              </div>
+            </section>
           </div>
         </aside>
       </div>
