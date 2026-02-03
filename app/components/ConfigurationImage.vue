@@ -86,7 +86,7 @@ const selectedImage = computed(() => selectImage(props.config));
 </script>
 
 <template>
-  <figure class="rounded-lg bg-base-100 p-3 shadow-sm">
+  <figure class="rounded-lg bg-base-100 shadow-sm">
     <img
       class="w-full aspect-video rounded-md object-cover"
       :src="selectedImage.src"
