@@ -737,7 +737,7 @@ const handleReset = async () => {
           <img src="/favicon.png" alt="Logo LM" class="h-11 w-11" />
         </a>
         <span class="absolute inset-x-0 text-center text-xl font-semibold tracking-wide">
-          Configurador para líneas conductoras LM
+          Configurador para líneas conductoras LMss
         </span>
       </div>
     </header>
