@@ -750,9 +750,9 @@ const handleReset = async () => {
       </div>
     </header>
 
-    <main class="h-[calc(100vh-64px)] overflow-hidden pt-20 pb-2 mx-auto max-w-[1500px]">
+    <main class="h-[calc(100vh-64px)] w-full overflow-hidden pt-20 pb-2 mx-auto max-w-[1500px]">
       <div v-if="isHydrated" class="flex h-full min-h-0 gap-8">
-        <section class="flex-1 h-full min-h-0 overflow-y-auto pl-2 pr-2 md:pl-3">
+        <section class="scroll-stable flex-1 min-w-0 h-full min-h-0 overflow-y-auto pl-2 pr-2 md:pl-3">
           <h2 class="card-title">Configuración</h2>
           <form class="w-full space-y-8" @submit.prevent @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
@@ -1832,7 +1832,7 @@ const handleReset = async () => {
             </div>
           </form>
         </section>
-        <aside class="flex-1 h-full min-h-0 flex flex-col gap-4">
+        <aside class="flex-1 min-w-0 h-full min-h-0 flex flex-col gap-4">
           <div class="tabs tabs-box bg-base-200 self-start">
             <button
               type="button"
@@ -1851,18 +1851,16 @@ const handleReset = async () => {
               Imagen
             </button>
           </div>
-          <div v-if="rightPanelTab === 'image'" class="flex-1 min-h-0 overflow-y-auto pr-2">
+          <div v-if="rightPanelTab === 'image'" class="scroll-stable flex-1 min-w-0 min-h-0 overflow-y-auto pr-2">
             <div class="overflow-hidden rounded-lg bg-base-200 shadow-sm">
               <section class="card w-full">
-                <div class="card-body flex flex-col">
-                  <ConfigurationImage :config="formState" />
-                </div>
+                <ConfigurationImage :config="formState" />
               </section>
             </div>
           </div>
           <div
             v-else-if="shouldShowRightPanelCalculations"
-            class="results-panel flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6"
+            class="results-panel scroll-stable flex-1 min-w-0 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6"
           >
             <section class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
@@ -2390,7 +2388,7 @@ const handleReset = async () => {
               </div>
             </div>
           </div>
-          <div v-else class="flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6">
+          <div v-else class="scroll-stable flex-1 min-w-0 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6">
             <section class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
                 <p class="text-sm text-base-content/70">
