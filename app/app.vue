@@ -2009,7 +2009,7 @@ const handleReset = async () => {
                     <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <div class="space-y-2">
-                        <span class="label-text">Tomacorrientes</span>
+                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Tomacorrientes</span>
                         <input
                           type="text"
                           class="input input-bordered w-full"
@@ -2018,7 +2018,7 @@ const handleReset = async () => {
                         />
                       </div>
                       <div class="space-y-2">
-                        <span class="label-text">Brazo arrastre</span>
+                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Brazo arrastre</span>
                         <input
                           type="text"
                           class="input input-bordered w-full"
@@ -2176,7 +2176,7 @@ const handleReset = async () => {
                     <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <div class="space-y-2">
-                        <span class="label-text">Tomacorrientes</span>
+                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Tomacorrientes</span>
                         <input
                           type="text"
                           class="input input-bordered w-full"
@@ -2185,7 +2185,7 @@ const handleReset = async () => {
                         />
                       </div>
                       <div class="space-y-2">
-                        <span class="label-text">Brazo arrastre</span>
+                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Brazo arrastre</span>
                         <input
                           type="text"
                           class="input input-bordered w-full"
@@ -2344,7 +2344,7 @@ const handleReset = async () => {
                     <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <div class="space-y-2">
-                        <span class="label-text">Tomacorrientes</span>
+                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Tomacorrientes</span>
                         <input
                           type="text"
                           class="input input-bordered w-full"
@@ -2353,7 +2353,7 @@ const handleReset = async () => {
                         />
                       </div>
                       <div class="space-y-2">
-                        <span class="label-text">Brazo arrastre</span>
+                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Brazo arrastre</span>
                         <input
                           type="text"
                           class="input input-bordered w-full"
