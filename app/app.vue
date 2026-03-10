@@ -1855,12 +1855,12 @@ const handleReset = async () => {
           </div>
           <div
             v-else-if="shouldShowRightPanelCalculations"
-            class="flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6"
+            class="results-panel flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6"
           >
             <section class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div class="space-y-2">
+                <div class="results-summary-grid grid gap-4 md:grid-cols-3">
+                  <div class="results-summary-item">
                   <label class="label-text text-sm font-semibold" for="totalPowerWatts">
                     Potencia total (watios)
                   </label>
@@ -1872,7 +1872,7 @@ const handleReset = async () => {
                     :value="hasAnyRightPanelInput ? totalPowerWatts : ''"
                   />
                   </div>
-                  <div class="space-y-2">
+                  <div class="results-summary-item">
                   <label class="label-text text-sm font-semibold" for="intensityToInstall">
                     Intensidad a instalar (Amperios)
                   </label>
@@ -1884,7 +1884,7 @@ const handleReset = async () => {
                     :value="hasAnyRightPanelInput ? intensityToInstallAmp ?? '' : ''"
                   />
                   </div>
-                  <div class="space-y-2">
+                  <div class="results-summary-item">
                   <label class="label-text text-sm font-semibold" for="voltageDropPercent">
                     % Caída de tensión
                   </label>
@@ -2496,3 +2496,32 @@ const handleReset = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.results-panel :is(input.input, select.select) {
+  min-height: 2.25rem;
+  height: 2.25rem;
+  padding-inline: 0.625rem;
+  font-size: 0.875rem;
+}
+
+.results-panel .label-text {
+  margin-bottom: 0;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+
+.results-summary-grid .label-text {
+  margin: 0;
+}
+
+.results-summary-item {
+  display: grid;
+  grid-template-rows: minmax(2.75rem, auto) 2.25rem auto;
+  align-items: start;
+}
+
+.results-panel .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0;
+}
+</style>
