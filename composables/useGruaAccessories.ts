@@ -9,6 +9,8 @@ type Grua = {
 };
 
 type FormState = {
+  max_simultaneous_power_kw: number | null;
+  power_mode: string;
   voltage: number | null;
 };
 
@@ -64,7 +66,7 @@ const getIntensityToInstall = (intensityNominal: number) => {
 
 const getTomacorrientesRef = (intensityToInstall: number | string | null) => {
   if (typeof intensityToInstall !== "number") {
-    return 0;
+    return null;
   }
   switch (intensityToInstall) {
     case 40:
@@ -82,13 +84,13 @@ const getTomacorrientesRef = (intensityToInstall: number | string | null) => {
     case 200:
       return "3 TO-4x70A";
     default:
-      return 0;
+      return null;
   }
 };
 
 const getBrazoArrastreRef = (intensityToInstall: number | string | null) => {
   if (typeof intensityToInstall !== "number") {
-    return 0;
+    return null;
   }
   switch (intensityToInstall) {
     case 40:
@@ -106,7 +108,7 @@ const getBrazoArrastreRef = (intensityToInstall: number | string | null) => {
     case 200:
       return "3 BA-70";
     default:
-      return 0;
+      return null;
   }
 };
 
@@ -116,8 +118,15 @@ export const useGruaAccessories = (formState: FormState, gruas: { value: Grua[] 
     if (!Number.isFinite(voltage) || voltage <= 0) {
       return gruas.value.map(() => null);
     }
+
+    const simultaneousKw = Number(formState.max_simultaneous_power_kw);
+    const useSimultaneousPower =
+      formState.power_mode === "simultanea" &&
+      Number.isFinite(simultaneousKw) &&
+      simultaneousKw > 0;
+
     return gruas.value.map((grua) => {
-      const powerWatts = getInstalledPowerWatts(grua);
+      const powerWatts = useSimultaneousPower ? simultaneousKw * 1000 : getInstalledPowerWatts(grua);
       const intensityNominal = getNominalIntensityAmps(powerWatts, voltage);
       return getIntensityToInstall(intensityNominal);
     });
