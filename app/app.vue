@@ -744,7 +744,7 @@ const handleReset = async () => {
 
     <main class="h-[calc(100vh-64px)] overflow-hidden pt-20 pb-2 mx-auto max-w-[1500px]">
       <div v-if="isHydrated" class="flex h-full min-h-0 gap-8">
-        <section class="flex-1 h-full min-h-0 overflow-y-auto pr-2">
+        <section class="flex-1 h-full min-h-0 overflow-y-auto pl-2 pr-2 md:pl-3">
           <h2 class="card-title">Configuración</h2>
           <form class="w-full space-y-8" @submit.prevent @input="handleInputValidation" @change="handleInputValidation">
             <div class="space-y-3">
