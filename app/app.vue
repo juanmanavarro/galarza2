@@ -1900,7 +1900,7 @@ const handleReset = async () => {
                   </p>
                   </div>
                 </div>
-                <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'" class="mt-4 grid gap-4 md:grid-cols-2">
+                <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'" class="mt-2 grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="supportsSO4">
                       Soportes (SO-4)
@@ -2005,7 +2005,7 @@ const handleReset = async () => {
                   </div>
                 </div>
                 <div class="mt-4 space-y-4">
-                  <div v-for="index in gruasCount" :key="`grua-resumen-${index}`" class="space-y-2">
+                  <div v-for="index in gruasCount" :key="`grua-resumen-${index}`" class="grua-summary-item">
                     <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <div class="space-y-2">
@@ -2172,7 +2172,7 @@ const handleReset = async () => {
                   </div>
                 </div>
                 <div class="mt-4 space-y-4">
-                  <div v-for="index in gruasCount" :key="`grua-linea-${index}`" class="space-y-2">
+                  <div v-for="index in gruasCount" :key="`grua-linea-${index}`" class="grua-summary-item">
                     <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <div class="space-y-2">
@@ -2340,7 +2340,7 @@ const handleReset = async () => {
                   </div>
                 </div>
                 <div class="mt-4 space-y-4">
-                  <div v-for="index in gruasCount" :key="`grua-intermedia-${index}`" class="space-y-2">
+                  <div v-for="index in gruasCount" :key="`grua-intermedia-${index}`" class="grua-summary-item">
                     <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <div class="space-y-2">
@@ -2523,5 +2523,26 @@ const handleReset = async () => {
 
 .results-panel .space-y-2 > :not([hidden]) ~ :not([hidden]) {
   margin-top: 0;
+}
+
+.results-panel .grid {
+  row-gap: 0.5rem;
+}
+
+.grua-summary-item {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.grua-summary-item > .label-text {
+  flex: 0 0 auto;
+  min-width: 4rem;
+  margin-bottom: 0.375rem;
+  text-align: left;
+}
+
+.grua-summary-item > .grid {
+  flex: 1 1 auto;
 }
 </style>
