@@ -111,6 +111,7 @@ const isUnlocked = ref(false);
 const accessPassword = ref("");
 const accessError = ref("");
 const isResetting = ref(false);
+const rightPanelTab = ref("results");
 const lastSavedState = ref("");
 const initialState = ref(initialSerialized);
 
@@ -1824,18 +1825,42 @@ const handleReset = async () => {
             </div>
           </form>
         </section>
-        <aside class="flex-1 h-full min-h-0 flex flex-col gap-6">
-          <div class="overflow-hidden rounded-lg bg-base-200 shadow-sm">
-            <section class="card w-full">
-              <div class="card-body flex flex-col">
-                <ConfigurationImage :config="formState" />
-              </div>
-            </section>
+        <aside class="flex-1 h-full min-h-0 flex flex-col gap-4">
+          <div class="tabs tabs-box bg-base-200 self-start">
+            <button
+              type="button"
+              class="tab"
+              :class="{ 'tab-active': rightPanelTab === 'results' }"
+              @click="rightPanelTab = 'results'"
+            >
+              Resultados
+            </button>
+            <button
+              type="button"
+              class="tab"
+              :class="{ 'tab-active': rightPanelTab === 'image' }"
+              @click="rightPanelTab = 'image'"
+            >
+              Imagen
+            </button>
           </div>
-          <div v-if="shouldShowRightPanelCalculations" class="flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6">
+          <div v-if="rightPanelTab === 'image'" class="flex-1 min-h-0 overflow-y-auto pr-2">
+            <div class="overflow-hidden rounded-lg bg-base-200 shadow-sm">
+              <section class="card w-full">
+                <div class="card-body flex flex-col">
+                  <ConfigurationImage :config="formState" />
+                </div>
+              </section>
+            </div>
+          </div>
+          <div
+            v-else-if="shouldShowRightPanelCalculations"
+            class="flex-1 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6"
+          >
             <section class="card bg-base-200 shadow-sm w-full">
-              <div class="card-body flex flex-col">
-                <div class="mt-4 space-y-2">
+              <div class="card-body">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
                   <label class="label-text text-sm font-semibold" for="totalPowerWatts">
                     Potencia total (watios)
                   </label>
@@ -1846,8 +1871,8 @@ const handleReset = async () => {
                     readonly
                     :value="hasAnyRightPanelInput ? totalPowerWatts : ''"
                   />
-                </div>
-                <div class="mt-4 space-y-2">
+                  </div>
+                  <div class="space-y-2">
                   <label class="label-text text-sm font-semibold" for="intensityToInstall">
                     Intensidad a instalar (Amperios)
                   </label>
@@ -1858,8 +1883,8 @@ const handleReset = async () => {
                     readonly
                     :value="hasAnyRightPanelInput ? intensityToInstallAmp ?? '' : ''"
                   />
-                </div>
-                <div class="mt-4 space-y-2">
+                  </div>
+                  <div class="space-y-2">
                   <label class="label-text text-sm font-semibold" for="voltageDropPercent">
                     % Caída de tensión
                   </label>
@@ -1873,9 +1898,10 @@ const handleReset = async () => {
                   <p v-if="voltageDropMessage" class="text-xs text-base-content/70">
                     {{ voltageDropMessage }}
                   </p>
+                  </div>
                 </div>
-                <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'">
-                  <div class="mt-4 space-y-2">
+                <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'" class="mt-4 grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="supportsSO4">
                       Soportes (SO-4)
                     </label>
@@ -1887,7 +1913,7 @@ const handleReset = async () => {
                       :value="hasAnyRightPanelInput ? supportsSO4 ?? '' : ''"
                     />
                   </div>
-                  <div class="mt-4 space-y-2">
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="empalmesEMP4">
                       Empalmes (EMP-4)
                     </label>
@@ -1899,7 +1925,7 @@ const handleReset = async () => {
                       :value="hasAnyRightPanelInput ? empalmesEMP4 ?? '' : ''"
                     />
                   </div>
-                  <div class="mt-4 space-y-2">
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="alimentacionExtremaRef">
                       Alimentación extrema (desde 40 A hasta 140 A)
                     </label>
@@ -1911,7 +1937,7 @@ const handleReset = async () => {
                       :value="hasAnyRightPanelInput ? alimentacionExtremaRef ?? '' : ''"
                     />
                   </div>
-                  <div class="mt-4 space-y-2">
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="alimentacion160200">
                       Alimentación para 160-200 A
                     </label>
@@ -1941,7 +1967,7 @@ const handleReset = async () => {
                       </option>
                     </select>
                   </div>
-                  <div class="mt-4 space-y-2">
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="puntoFijoPF4">
                       Punto Fijo (PF-4)
                     </label>
@@ -1953,7 +1979,7 @@ const handleReset = async () => {
                       :value="hasAnyRightPanelInput ? 1 : ''"
                     />
                   </div>
-                  <div class="mt-4 space-y-2">
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="tapaExtremaTE4">
                       Tapa Extrema (TE-4)
                     </label>
@@ -1965,7 +1991,7 @@ const handleReset = async () => {
                       :value="hasAnyRightPanelInput ? 1 : ''"
                     />
                   </div>
-                  <div class="mt-4 space-y-2">
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="su5001">
                       SU-500-1
                     </label>
@@ -2013,135 +2039,137 @@ const handleReset = async () => {
             <div v-if="voltageDropMessage === 'VER OPCIONES 1 Y 2'" class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
                 <h2 class="card-title">1. Incrementar intensidad de la linea</h2>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="intensityToInstallLine">
-                    Intensidad (Amperios) a INSTALAR
-                  </label>
-                  <input
-                    id="intensityToInstallLine"
-                    type="text"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="intensityToInstallLine ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="voltageDropPercent">
-                    % Caída de tensión
-                  </label>
-                  <input
-                    id="voltageDropPercent"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="isConsultingLine ? '' : voltageDropPercentLine ?? ''"
-                  />
-                  <p v-if="voltageDropMessageLine" class="text-xs text-base-content/70">
-                    {{ voltageDropMessageLine }}
-                  </p>
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="supportsSO4Line">
-                    Soportes (SO-4)
-                  </label>
-                  <input
-                    id="supportsSO4Line"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="isConsultingLine ? '' : supportsSO4Line ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="empalmesEMP4Line">
-                    Empalmes (EMP-4)
-                  </label>
-                  <input
-                    id="empalmesEMP4Line"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="isConsultingLine ? '' : empalmesEMP4Line ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="alimentacionExtremaLine">
-                    Alimentación extrema (desde 40 A hasta 140 A)
-                  </label>
-                  <input
-                    id="alimentacionExtremaLine"
-                    type="text"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="isConsultingLine ? '' : alimentacionExtremaLine ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="alimentacion160200Line">
-                    Alimentación para 160-200 A
-                  </label>
-                  <select
-                    id="alimentacion160200Line"
-                    class="select select-bordered w-full"
-                    :value="isConsultingLine ? '' : undefined"
-                    :disabled="isConsultingLine"
-                  >
-                    <option value=""></option>
-                    <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
-                      AG-4-1xM25 (1 cable, orificio de 13-18 mm)
-                    </option>
-                    <option value="AG-4-1xM32 (1 cable, orificio de 18-25 mm)">
-                      AG-4-1xM32 (1 cable, orificio de 18-25 mm)
-                    </option>
-                    <option value="AG-4-1xM40 (1 cable, orificio de 22-32 mm)">
-                      AG-4-1xM40 (1 cable, orificio de 22-32 mm)
-                    </option>
-                    <option value="AG-4-1xM63 (1 cable, orificio de 34-44 mm)">
-                      AG-4-1xM63 (1 cable, orificio de 34-44 mm)
-                    </option>
-                    <option value="AG-4-4xM25 (4 cables, orificio de 13-18 mm)">
-                      AG-4-4xM25 (4 cables, orificio de 13-18 mm)
-                    </option>
-                    <option value="AG-4-4xM32 (4 cables, orificio de 18-25 mm)">
-                      AG-4-4xM32 (4 cables, orificio de 18-25 mm)
-                    </option>
-                  </select>
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="puntoFijoPF4Line">
-                    Punto Fijo (PF-4)
-                  </label>
-                  <input
-                    id="puntoFijoPF4Line"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="isConsultingLine ? '' : 1"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Line">
-                    Tapa Extrema (TE-4)
-                  </label>
-                  <input
-                    id="tapaExtremaTE4Line"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="isConsultingLine ? '' : 1"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="su5001Line">
-                    SU-500-1
-                  </label>
-                  <input
-                    id="su5001Line"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="isConsultingLine ? '' : su5001Line ?? ''"
-                  />
+                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="intensityToInstallLine">
+                      Intensidad (Amperios) a INSTALAR
+                    </label>
+                    <input
+                      id="intensityToInstallLine"
+                      type="text"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="intensityToInstallLine ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="voltageDropPercent">
+                      % Caída de tensión
+                    </label>
+                    <input
+                      id="voltageDropPercent"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="isConsultingLine ? '' : voltageDropPercentLine ?? ''"
+                    />
+                    <p v-if="voltageDropMessageLine" class="text-xs text-base-content/70">
+                      {{ voltageDropMessageLine }}
+                    </p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="supportsSO4Line">
+                      Soportes (SO-4)
+                    </label>
+                    <input
+                      id="supportsSO4Line"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="isConsultingLine ? '' : supportsSO4Line ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="empalmesEMP4Line">
+                      Empalmes (EMP-4)
+                    </label>
+                    <input
+                      id="empalmesEMP4Line"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="isConsultingLine ? '' : empalmesEMP4Line ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="alimentacionExtremaLine">
+                      Alimentación extrema (desde 40 A hasta 140 A)
+                    </label>
+                    <input
+                      id="alimentacionExtremaLine"
+                      type="text"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="isConsultingLine ? '' : alimentacionExtremaLine ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="alimentacion160200Line">
+                      Alimentación para 160-200 A
+                    </label>
+                    <select
+                      id="alimentacion160200Line"
+                      class="select select-bordered w-full"
+                      :value="isConsultingLine ? '' : undefined"
+                      :disabled="isConsultingLine"
+                    >
+                      <option value=""></option>
+                      <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
+                        AG-4-1xM25 (1 cable, orificio de 13-18 mm)
+                      </option>
+                      <option value="AG-4-1xM32 (1 cable, orificio de 18-25 mm)">
+                        AG-4-1xM32 (1 cable, orificio de 18-25 mm)
+                      </option>
+                      <option value="AG-4-1xM40 (1 cable, orificio de 22-32 mm)">
+                        AG-4-1xM40 (1 cable, orificio de 22-32 mm)
+                      </option>
+                      <option value="AG-4-1xM63 (1 cable, orificio de 34-44 mm)">
+                        AG-4-1xM63 (1 cable, orificio de 34-44 mm)
+                      </option>
+                      <option value="AG-4-4xM25 (4 cables, orificio de 13-18 mm)">
+                        AG-4-4xM25 (4 cables, orificio de 13-18 mm)
+                      </option>
+                      <option value="AG-4-4xM32 (4 cables, orificio de 18-25 mm)">
+                        AG-4-4xM32 (4 cables, orificio de 18-25 mm)
+                      </option>
+                    </select>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="puntoFijoPF4Line">
+                      Punto Fijo (PF-4)
+                    </label>
+                    <input
+                      id="puntoFijoPF4Line"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="isConsultingLine ? '' : 1"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Line">
+                      Tapa Extrema (TE-4)
+                    </label>
+                    <input
+                      id="tapaExtremaTE4Line"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="isConsultingLine ? '' : 1"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="su5001Line">
+                      SU-500-1
+                    </label>
+                    <input
+                      id="su5001Line"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="isConsultingLine ? '' : su5001Line ?? ''"
+                    />
+                  </div>
                 </div>
                 <div class="mt-4 space-y-4">
                   <div v-for="index in gruasCount" :key="`grua-linea-${index}`" class="space-y-2">
@@ -2175,83 +2203,84 @@ const handleReset = async () => {
                 <h2 class="card-title">
                   2. Alimentación intermedia<span v-if="recommendedFeedingType">: {{ recommendedFeedingType }}</span>
                 </h2>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="intensityToInstallFeeding">
-                    Intensidad (Amperios) a INSTALAR
-                  </label>
-                  <input
-                    id="intensityToInstallFeeding"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="intensityToInstallFeeding ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="voltageDropPercentIntermedia">
-                    % Caída de tensión
-                  </label>
-                  <input
-                    id="voltageDropPercentIntermedia"
-                    type="text"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="voltageDropPercentIntermediaDisplay"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="supportsSO4Intermedia">
-                    Soportes (SO-4)
-                  </label>
-                  <input
-                    id="supportsSO4Intermedia"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="supportsSO4Intermedia ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="empalmesEMP4Intermedia">
-                    Empalmes (EMP-4)
-                  </label>
-                  <input
-                    id="empalmesEMP4Intermedia"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="empalmesEMP4Intermedia ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="alimentacionUnidadesIntermedia">
-                    Alimentación (unidades)
-                  </label>
-                  <input
-                    id="alimentacionUnidadesIntermedia"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="alimentacionUnidadesIntermedia ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="alimentacionInteriorIntermedia">
-                    Alimentación  (desde 40 A hasta 140 A) (tipo )
-                  </label>
-                  <input
-                    id="alimentacionInteriorIntermedia"
-                    type="text"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="alimentacionInteriorIntermedia ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="alimentacion160200Intermedia">
-                    Alimentación para 160-200 A
-                  </label>
-                  <select id="alimentacion160200Intermedia" class="select select-bordered w-full">
+                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="intensityToInstallFeeding">
+                      Intensidad (Amperios) a INSTALAR
+                    </label>
+                    <input
+                      id="intensityToInstallFeeding"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="intensityToInstallFeeding ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="voltageDropPercentIntermedia">
+                      % Caída de tensión
+                    </label>
+                    <input
+                      id="voltageDropPercentIntermedia"
+                      type="text"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="voltageDropPercentIntermediaDisplay"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="supportsSO4Intermedia">
+                      Soportes (SO-4)
+                    </label>
+                    <input
+                      id="supportsSO4Intermedia"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="supportsSO4Intermedia ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="empalmesEMP4Intermedia">
+                      Empalmes (EMP-4)
+                    </label>
+                    <input
+                      id="empalmesEMP4Intermedia"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="empalmesEMP4Intermedia ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="alimentacionUnidadesIntermedia">
+                      Alimentación (unidades)
+                    </label>
+                    <input
+                      id="alimentacionUnidadesIntermedia"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="alimentacionUnidadesIntermedia ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="alimentacionInteriorIntermedia">
+                      Alimentación  (desde 40 A hasta 140 A) (tipo )
+                    </label>
+                    <input
+                      id="alimentacionInteriorIntermedia"
+                      type="text"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="alimentacionInteriorIntermedia ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="alimentacion160200Intermedia">
+                      Alimentación para 160-200 A
+                    </label>
+                    <select id="alimentacion160200Intermedia" class="select select-bordered w-full">
                     <option value=""></option>
                     <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
                       AG-4-1xM25 (1 cable, orificio de 13-18 mm)
@@ -2271,43 +2300,44 @@ const handleReset = async () => {
                     <option value="AG-4-4xM32 (4 cables, orificio de 18-25 mm)">
                       AG-4-4xM32 (4 cables, orificio de 18-25 mm)
                     </option>
-                  </select>
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="puntoFijoPF4Intermedia">
-                    Punto Fijo (PF-4)
-                  </label>
-                  <input
-                    id="puntoFijoPF4Intermedia"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="puntoFijoPF4Intermedia ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Intermedia">
-                    Tapa Extrema (TE-4)
-                  </label>
-                  <input
-                    id="tapaExtremaTE4Intermedia"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="tapaExtremaTE4Intermedia ?? ''"
-                  />
-                </div>
-                <div class="mt-4 space-y-2">
-                  <label class="label-text text-sm font-semibold" for="su5001Intermedia">
-                    SU-500-1
-                  </label>
-                  <input
-                    id="su5001Intermedia"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="su5001Intermedia ?? ''"
-                  />
+                    </select>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="puntoFijoPF4Intermedia">
+                      Punto Fijo (PF-4)
+                    </label>
+                    <input
+                      id="puntoFijoPF4Intermedia"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="puntoFijoPF4Intermedia ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Intermedia">
+                      Tapa Extrema (TE-4)
+                    </label>
+                    <input
+                      id="tapaExtremaTE4Intermedia"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="tapaExtremaTE4Intermedia ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="su5001Intermedia">
+                      SU-500-1
+                    </label>
+                    <input
+                      id="su5001Intermedia"
+                      type="number"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="su5001Intermedia ?? ''"
+                    />
+                  </div>
                 </div>
                 <div class="mt-4 space-y-4">
                   <div v-for="index in gruasCount" :key="`grua-intermedia-${index}`" class="space-y-2">
