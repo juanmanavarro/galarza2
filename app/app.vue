@@ -111,6 +111,8 @@ const isUnlocked = ref(false);
 const accessPassword = ref("");
 const accessError = ref("");
 const isResetting = ref(false);
+const isLineCardOpen = ref(false);
+const isFeedingCardOpen = ref(false);
 const rightPanelTab = ref("results");
 const lastSavedState = ref("");
 const initialState = ref(initialSerialized);
@@ -136,7 +138,6 @@ const gruasCount = computed(() => {
 });
 
 watch(gruasCount, syncGruasLength, { immediate: true });
-
 const handleFileChange = (event) => {
   const file = event.target?.files?.[0];
   formState.sketch_file = file ? file.name : "";
@@ -300,6 +301,12 @@ const {
   voltageDropPercent,
   voltageDropMessage,
 } = useVoltageDrop(formState, totalPowerAmps);
+watch(voltageDropMessage, (value) => {
+  if (value !== "VER OPCIONES 1 Y 2") {
+    isLineCardOpen.value = false;
+    isFeedingCardOpen.value = false;
+  }
+});
 const intensityToInstallLine = computed(() => {
   const intensityNominal = Number(totalPowerAmps.value);
   if (!Number.isFinite(intensityNominal)) {
@@ -2037,9 +2044,17 @@ const handleReset = async () => {
               </div>
             </section>
             <div v-if="voltageDropMessage === 'VER OPCIONES 1 Y 2'" class="card bg-base-200 shadow-sm w-full">
-              <div class="card-body">
-                <h2 class="card-title">1. Incrementar intensidad de la linea</h2>
-                <div class="mt-4 grid gap-4 md:grid-cols-2">
+              <button
+                type="button"
+                class="card-header flex w-full items-center justify-between px-4 py-4 text-left"
+                :aria-expanded="isLineCardOpen"
+                @click="isLineCardOpen = !isLineCardOpen"
+              >
+                <h2 class="card-title text-base">1. Incrementar intensidad de la linea</h2>
+                <span class="text-sm">{{ isLineCardOpen ? "Ocultar" : "Mostrar" }}</span>
+              </button>
+              <div v-show="isLineCardOpen" class="card-body px-4 pb-4 pt-2">
+                <div class="grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="intensityToInstallLine">
                       Intensidad (Amperios) a INSTALAR
@@ -2199,11 +2214,19 @@ const handleReset = async () => {
               </div>
             </div>
             <div v-if="voltageDropMessage === 'VER OPCIONES 1 Y 2'" class="card bg-base-200 shadow-sm w-full">
-              <div class="card-body">
-                <h2 class="card-title">
+              <button
+                type="button"
+                class="card-header flex w-full items-center justify-between px-4 py-4 text-left"
+                :aria-expanded="isFeedingCardOpen"
+                @click="isFeedingCardOpen = !isFeedingCardOpen"
+              >
+                <h2 class="card-title text-base">
                   2. Alimentación intermedia<span v-if="recommendedFeedingType">: {{ recommendedFeedingType }}</span>
                 </h2>
-                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <span class="text-sm">{{ isFeedingCardOpen ? "Ocultar" : "Mostrar" }}</span>
+              </button>
+              <div v-show="isFeedingCardOpen" class="card-body px-4 pb-4 pt-2">
+                <div class="grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="intensityToInstallFeeding">
                       Intensidad (Amperios) a INSTALAR
