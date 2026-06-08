@@ -8,13 +8,13 @@ export const INTENSITY_OPTIONS = [40, 60, 80, 100, 140, 160, 200] as const;
 export type IntensityOption = (typeof INTENSITY_OPTIONS)[number];
 
 export const IMPEDANCE_BY_INTENSITY_OHM_PER_M: Record<IntensityOption, number> = {
-  40: 0.002,
-  60: 0.00175,
-  80: 0.00118,
-  100: 0.001,
-  140: 0.00075,
-  160: 0.00065,
-  200: 0.00055,
+  40: 0.00346,
+  60: 0.00303,
+  80: 0.00204,
+  100: 0.00173,
+  140: 0.00123,
+  160: 0.00105,
+  200: 0.0009,
 };
 
 export const selectIntensityToInstall = (

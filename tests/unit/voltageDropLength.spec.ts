@@ -63,19 +63,19 @@ describe("voltage drop length by feeding type", () => {
     );
 
     expect(central.voltageDropVolts.value).toBe((extreme.voltageDropVolts.value as number) / 2);
-    expect(distance.voltageDropVolts.value).toBe((extreme.voltageDropVolts.value as number) * (80 / 120));
+    expect(distance.voltageDropVolts.value).toBeCloseTo((extreme.voltageDropVolts.value as number) * (80 / 120));
   });
 });
 
 describe("voltage drop feeding alternatives", () => {
   it("recommends central feeding after an extreme-feeding failure", () => {
     const { recommendedFeedingType, selectedFeedingLengthMeters } = useLineCalculations(
-      createFormState({ total_distance: 130, feeding_point_position: "extreme" }),
+      createFormState({ total_distance: 80, feeding_point_position: "extreme" }),
       { value: 100 }
     );
 
     expect(recommendedFeedingType.value).toBe("ALIMENTACIÓN CENTRAL = L/2");
-    expect(selectedFeedingLengthMeters.value).toBe(65);
+    expect(selectedFeedingLengthMeters.value).toBe(40);
   });
 
   it("recommends L/6 only after a central-feeding failure", () => {

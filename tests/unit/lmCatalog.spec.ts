@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateVoltageDropVolts,
   getEmpalmesEMP4IntermediaCount,
   getEmpalmesEMP4LineCount,
+  getImpedanceOhmPerM,
   getSupportsSO4Count,
   requiresTechnicalConsultation,
 } from "../../utils/lmCatalog";
@@ -16,6 +18,28 @@ const baseTechnicalConsultationInput = {
   amperage: 100,
   hasSectionedZones: "0",
 };
+
+describe("voltage drop coefficients", () => {
+  it("uses the documented coefficient for each LM model", () => {
+    expect(getImpedanceOhmPerM(40)).toBe(0.00346);
+    expect(getImpedanceOhmPerM(60)).toBe(0.00303);
+    expect(getImpedanceOhmPerM(80)).toBe(0.00204);
+    expect(getImpedanceOhmPerM(100)).toBe(0.00173);
+    expect(getImpedanceOhmPerM(140)).toBe(0.00123);
+    expect(getImpedanceOhmPerM(160)).toBe(0.00105);
+    expect(getImpedanceOhmPerM(200)).toBe(0.0009);
+  });
+
+  it("calculates voltage drop with the selected LM coefficient", () => {
+    expect(
+      calculateVoltageDropVolts({
+        intensityNominal: 100,
+        lengthMeters: 80,
+        intensityToInstall: 140,
+      })
+    ).toBeCloseTo(Math.sqrt(3) * 100 * 80 * 0.00123);
+  });
+});
 
 describe("support counts", () => {
   it("uses L/2 for interior LM40 to LM100", () => {
