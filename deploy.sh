@@ -13,6 +13,11 @@ fi
 echo "🧹 Limpiando caché y builds anteriores..."
 rm -rf .nuxt .output node_modules/.cache deploy
 
+# Build id para cache busting de assets públicos y HTML
+BUILD_ID="$(date '+%Y%m%d%H%M%S')-$(git rev-parse --short HEAD 2>/dev/null || echo no-git)"
+export NUXT_PUBLIC_BUILD_ID="$BUILD_ID"
+echo "🏷️ Build ID: $BUILD_ID"
+
 # 2. Build Nuxt con forzado
 echo "📦 Generando Nuxt (build completo)..."
 NODE_ENV=production npm run generate
@@ -32,7 +37,7 @@ fi
 # Añadir comentario con fecha de build en index.html
 if [ -f "deploy/index.html" ]; then
   BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
-  sed -i "1i<!-- Build: $BUILD_DATE -->" deploy/index.html
+  sed -i "1i<!-- Build: $BUILD_DATE | Build ID: $BUILD_ID -->" deploy/index.html
   echo "  ✓ Fecha de build añadida: $BUILD_DATE"
 fi
 
@@ -44,6 +49,22 @@ cat << 'EOF' > deploy/.htaccess
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|200\.html|404\.html|_payload\.json)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "^mail\.php$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+
+  <FilesMatch "\.(js|css|png|ico|webp|jpg|jpeg|svg|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
 </IfModule>
 EOF
 
