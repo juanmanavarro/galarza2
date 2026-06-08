@@ -7,6 +7,7 @@ import {
   calculateVoltageDropVolts,
   getEmpalmesEMP4IntermediaCount,
   getEmpalmesEMP4LineCount,
+  getEffectiveVoltageDropLength,
   getExtremeFeedingRef,
   getIntermediateFeedingRef,
   getSupportsSO4Count,
@@ -18,18 +19,28 @@ import {
 type FormState = {
   total_distance: number | null;
   voltage: number | null;
+  feeding_point_position: string;
+  feeding_point_position_distance: number | null;
 };
 
 export const useLineCalculations = (
   formState: FormState,
   totalPowerAmps: { value: number }
 ) => {
+  const effectiveVoltageDropLength = computed(() =>
+    getEffectiveVoltageDropLength({
+      totalDistance: Number(formState.total_distance),
+      feedingPointPosition: formState.feeding_point_position,
+      feedingPointPositionDistance: formState.feeding_point_position_distance,
+    })
+  );
+
   const intensityToInstallLine = computed(() => {
     const intensityNominal = Number(totalPowerAmps.value);
     if (!Number.isFinite(intensityNominal)) {
       return null;
     }
-    const lengthMeters = Number(formState.total_distance);
+    const lengthMeters = Number(effectiveVoltageDropLength.value);
     const nominalVoltage = Number(formState.voltage);
     if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
       return null;
@@ -56,7 +67,7 @@ export const useLineCalculations = (
   const voltageDropVoltsLine = computed(() =>
     calculateVoltageDropVolts({
       intensityNominal: Number(totalPowerAmps.value),
-      lengthMeters: Number(formState.total_distance),
+      lengthMeters: Number(effectiveVoltageDropLength.value),
       intensityToInstall: intensityToInstallLine.value,
     })
   );
@@ -88,25 +99,18 @@ export const useLineCalculations = (
   const voltageDropPercentL2 = computed(() =>
     getVoltageDropPercentForLength(Number(formState.total_distance) / 2)
   );
-  const voltageDropPercentL4 = computed(() =>
-    getVoltageDropPercentForLength(Number(formState.total_distance) / 4)
-  );
   const voltageDropPercentL6 = computed(() =>
     getVoltageDropPercentForLength(Number(formState.total_distance) / 6)
   );
 
   const recommendedFeedingType = computed(() => {
-    const dropL2 = voltageDropPercentL2.value;
-    if (isVoltageDropAccepted(dropL2)) {
-      return "ALIMENTACIÓN CENTRAL = L/2";
+    if (formState.feeding_point_position === "extreme") {
+      const dropL2 = voltageDropPercentL2.value;
+      return isVoltageDropAccepted(dropL2) ? "ALIMENTACIÓN CENTRAL = L/2" : null;
     }
-    const dropL4 = voltageDropPercentL4.value;
-    if (isVoltageDropAccepted(dropL4)) {
-      return "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4";
-    }
-    const dropL6 = voltageDropPercentL6.value;
-    if (isVoltageDropAccepted(dropL6)) {
-      return "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6";
+    if (formState.feeding_point_position === "central") {
+      const dropL6 = voltageDropPercentL6.value;
+      return isVoltageDropAccepted(dropL6) ? "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6" : null;
     }
     return null;
   });
@@ -119,8 +123,6 @@ export const useLineCalculations = (
     switch (recommendedFeedingType.value) {
       case "ALIMENTACIÓN CENTRAL = L/2":
         return lengthMeters / 2;
-      case "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4":
-        return lengthMeters / 4;
       case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
         return lengthMeters / 6;
       default:
@@ -152,19 +154,14 @@ export const useLineCalculations = (
   );
 
   const alimentacionUnidadesIntermedia = computed(() => {
-    const dropL2 = voltageDropPercentL2.value;
-    if (isVoltageDropAccepted(dropL2)) {
-      return 1;
+    switch (recommendedFeedingType.value) {
+      case "ALIMENTACIÓN CENTRAL = L/2":
+        return 1;
+      case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
+        return 2;
+      default:
+        return null;
     }
-    const dropL4 = voltageDropPercentL4.value;
-    if (isVoltageDropAccepted(dropL4)) {
-      return 2;
-    }
-    const dropL6 = voltageDropPercentL6.value;
-    if (isVoltageDropAccepted(dropL6)) {
-      return 2;
-    }
-    return null;
   });
 
   const alimentacionInteriorIntermedia = computed(() =>
@@ -172,35 +169,24 @@ export const useLineCalculations = (
   );
 
   const puntoFijoPF4Intermedia = computed(() => {
-    const dropL2 = voltageDropPercentL2.value;
-    if (isVoltageDropAccepted(dropL2)) {
-      return 2;
+    switch (recommendedFeedingType.value) {
+      case "ALIMENTACIÓN CENTRAL = L/2":
+        return 2;
+      case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
+        return 1;
+      default:
+        return null;
     }
-    const dropL4 = voltageDropPercentL4.value;
-    if (isVoltageDropAccepted(dropL4)) {
-      return 1;
-    }
-    const dropL6 = voltageDropPercentL6.value;
-    if (isVoltageDropAccepted(dropL6)) {
-      return 3;
-    }
-    return null;
   });
 
   const tapaExtremaTE4Intermedia = computed(() => {
-    const dropL2 = voltageDropPercentL2.value;
-    if (isVoltageDropAccepted(dropL2)) {
-      return 2;
+    switch (recommendedFeedingType.value) {
+      case "ALIMENTACIÓN CENTRAL = L/2":
+      case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
+        return 2;
+      default:
+        return null;
     }
-    const dropL4 = voltageDropPercentL4.value;
-    if (isVoltageDropAccepted(dropL4)) {
-      return 0;
-    }
-    const dropL6 = voltageDropPercentL6.value;
-    if (isVoltageDropAccepted(dropL6)) {
-      return 0;
-    }
-    return null;
   });
 
   const su5001Intermedia = computed(() => {
@@ -238,7 +224,6 @@ export const useLineCalculations = (
     voltageDropVoltsLine,
     voltageDropPercentLine,
     voltageDropPercentL2,
-    voltageDropPercentL4,
     voltageDropPercentL6,
     recommendedFeedingType,
     selectedFeedingLengthMeters,

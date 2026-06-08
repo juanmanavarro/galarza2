@@ -305,7 +305,6 @@ const {
   voltageDropVoltsLine,
   voltageDropPercentLine,
   voltageDropPercentL2,
-  voltageDropPercentL4,
   voltageDropPercentL6,
   recommendedFeedingType,
   selectedFeedingLengthMeters,

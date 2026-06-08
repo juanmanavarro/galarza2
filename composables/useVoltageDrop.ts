@@ -2,6 +2,7 @@ import { computed } from "vue";
 import {
   calculateVoltageDropPercent,
   calculateVoltageDropVolts,
+  getEffectiveVoltageDropLength,
   getImpedanceOhmPerM,
   getVoltageDropOfferMessage,
   selectIntensityToInstall,
@@ -9,6 +10,9 @@ import {
 
 type FormState = {
   total_distance: number | null;
+  voltage: number | null;
+  feeding_point_position: string;
+  feeding_point_position_distance: number | null;
 };
 
 export const useVoltageDrop = (
@@ -17,10 +21,17 @@ export const useVoltageDrop = (
 ) => {
   const intensityToInstallAmp = computed(() => selectIntensityToInstall(Number(totalPowerAmps.value)));
   const impedanceOhmPerM = computed(() => getImpedanceOhmPerM(intensityToInstallAmp.value));
+  const effectiveVoltageDropLength = computed(() =>
+    getEffectiveVoltageDropLength({
+      totalDistance: Number(formState.total_distance),
+      feedingPointPosition: formState.feeding_point_position,
+      feedingPointPositionDistance: formState.feeding_point_position_distance,
+    })
+  );
   const voltageDropVolts = computed(() =>
     calculateVoltageDropVolts({
       intensityNominal: Number(totalPowerAmps.value),
-      lengthMeters: Number(formState.total_distance),
+      lengthMeters: Number(effectiveVoltageDropLength.value),
       intensityToInstall: intensityToInstallAmp.value,
     })
   );

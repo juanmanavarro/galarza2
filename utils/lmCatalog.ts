@@ -71,6 +71,34 @@ export const calculateVoltageDropVolts = ({
   return Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
 };
 
+export const getEffectiveVoltageDropLength = ({
+  totalDistance,
+  feedingPointPosition,
+  feedingPointPositionDistance,
+}: {
+  totalDistance: number;
+  feedingPointPosition: string;
+  feedingPointPositionDistance?: number | null;
+}) => {
+  if (!Number.isFinite(totalDistance) || totalDistance <= 0) {
+    return null;
+  }
+
+  if (feedingPointPosition === "central") {
+    return totalDistance / 2;
+  }
+
+  if (feedingPointPosition === "distance") {
+    const distanceFromExtreme = Number(feedingPointPositionDistance);
+    if (!Number.isFinite(distanceFromExtreme) || distanceFromExtreme < 0) {
+      return null;
+    }
+    return Math.max(distanceFromExtreme, totalDistance - distanceFromExtreme);
+  }
+
+  return totalDistance;
+};
+
 export const calculateVoltageDropPercent = ({
   dropVolts,
   nominalVoltage,
@@ -130,9 +158,6 @@ export const getEmpalmesEMP4IntermediaCount = (lengthMeters: number, recommended
   switch (recommendedFeedingType) {
     case "ALIMENTACIÓN CENTRAL = L/2":
       empalmesRaw = lengthMeters / 4 - 2;
-      break;
-    case "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4":
-      empalmesRaw = lengthMeters / 4 - 1;
       break;
     case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
       empalmesRaw = lengthMeters / 4 - 3;
