@@ -1,4 +1,5 @@
 import { computed } from "vue";
+import { selectIntensityToInstall } from "../utils/lmCatalog";
 
 type PowerGroup = {
   kw: number | null;
@@ -29,40 +30,6 @@ const getInstalledPowerWatts = (grua: Grua) => {
 
 const getNominalIntensityAmps = (powerWatts: number, voltage: number) =>
   powerWatts / (Math.sqrt(3) * voltage * 0.8);
-
-const getIntensityToInstall = (intensityNominal: number) => {
-  if (!Number.isFinite(intensityNominal)) {
-    return null;
-  }
-  if (intensityNominal <= 0) {
-    return 0;
-  }
-  if (intensityNominal < 40) {
-    return 40;
-  }
-  if (intensityNominal < 60) {
-    return 60;
-  }
-  if (intensityNominal < 80) {
-    return 80;
-  }
-  if (intensityNominal < 100) {
-    return 100;
-  }
-  if (intensityNominal < 140) {
-    return 140;
-  }
-  if (intensityNominal < 160) {
-    return 160;
-  }
-  if (intensityNominal < 200) {
-    return 200;
-  }
-  if (intensityNominal > 200) {
-    return "Consultar dpto. técnico";
-  }
-  return null;
-};
 
 const getTomacorrientesRef = (intensityToInstall: number | string | null) => {
   if (typeof intensityToInstall !== "number") {
@@ -128,7 +95,7 @@ export const useGruaAccessories = (formState: FormState, gruas: { value: Grua[] 
     return gruas.value.map((grua) => {
       const powerWatts = useSimultaneousPower ? simultaneousKw * 1000 : getInstalledPowerWatts(grua);
       const intensityNominal = getNominalIntensityAmps(powerWatts, voltage);
-      return getIntensityToInstall(intensityNominal);
+      return selectIntensityToInstall(intensityNominal, { zeroAsNoSelection: true });
     });
   });
 

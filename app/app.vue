@@ -8,6 +8,7 @@ import { useFormValidation } from "../composables/useFormValidation";
 import { useSupports } from "../composables/useSupports";
 import { useGruaAccessories } from "../composables/useGruaAccessories";
 import { useVersionedAsset } from "../composables/useVersionedAsset";
+import { useLineCalculations } from "../composables/useLineCalculations";
 
 const STORAGE_KEY = "galarza2-config-state";
 const AUTH_STORAGE_KEY = "galarza2-auth-unlocked";
@@ -284,17 +285,6 @@ const isToastVisible = ref(false);
 const toastVariant = ref("success");
 let toastTimeout = null;
 
-const INTENSITY_OPTIONS = [40, 60, 80, 100, 140, 160, 200];
-const IMPEDANCE_BY_INTENSITY_OHM_PER_M = {
-  40: 0.002,
-  60: 0.00175,
-  80: 0.00118,
-  100: 0.001,
-  140: 0.00075,
-  160: 0.00065,
-  200: 0.00055,
-};
-
 const { totalPowerWatts, totalPowerAmps } = useTotalPower(formState, gruas, gruasCount);
 const {
   voltageDropVolts,
@@ -309,353 +299,32 @@ watch(voltageDropMessage, (value) => {
     isFeedingCardOpen.value = false;
   }
 });
-const intensityToInstallLine = computed(() => {
-  const intensityNominal = Number(totalPowerAmps.value);
-  if (!Number.isFinite(intensityNominal)) {
-    return null;
-  }
-  const lengthMeters = Number(formState.total_distance);
-  const nominalVoltage = Number(formState.voltage);
-  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
-    return null;
-  }
-  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
-    return null;
-  }
-  for (const option of INTENSITY_OPTIONS) {
-    const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[option];
-    if (!Number.isFinite(impedance)) {
-      continue;
-    }
-    const dropVolts = Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
-    const dropPercent = (dropVolts / nominalVoltage) * 100;
-    if (intensityNominal < option && dropPercent < 3) {
-      return option;
-    }
-  }
-  return "Consultar dpto. técnico";
-});
-const isConsultingLine = computed(() => intensityToInstallLine.value === "Consultar dpto. técnico");
-const voltageDropVoltsLine = computed(() => {
-  const intensityNominal = Number(totalPowerAmps.value);
-  const lengthMeters = Number(formState.total_distance);
-  const intensityToInstall = intensityToInstallLine.value;
-  if (!Number.isFinite(intensityNominal) || intensityNominal <= 0) {
-    return null;
-  }
-  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
-    return null;
-  }
-  if (typeof intensityToInstall !== "number") {
-    return null;
-  }
-  const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[intensityToInstall];
-  if (!Number.isFinite(impedance)) {
-    return null;
-  }
-  return Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
-});
-const voltageDropPercentLine = computed(() => {
-  const dropVolts = voltageDropVoltsLine.value;
-  const nominalVoltage = Number(formState.voltage);
-  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
-    return null;
-  }
-  if (!Number.isFinite(dropVolts)) {
-    return null;
-  }
-  return (dropVolts / nominalVoltage) * 100;
-});
-const getVoltageDropPercentForLength = (lengthMeters) => {
-  const intensityNominal = Number(totalPowerAmps.value);
-  const nominalVoltage = Number(formState.voltage);
-  const intensityToInstall = intensityToInstallFeeding.value;
-  if (!Number.isFinite(intensityNominal) || intensityNominal <= 0) {
-    return null;
-  }
-  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
-    return null;
-  }
-  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
-    return null;
-  }
-  if (typeof intensityToInstall !== "number") {
-    return null;
-  }
-  const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[intensityToInstall];
-  if (!Number.isFinite(impedance)) {
-    return null;
-  }
-  const dropVolts = Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
-  return (dropVolts / nominalVoltage) * 100;
-};
-const getVoltageDropVoltsForLength = (lengthMeters) => {
-  const intensityNominal = Number(totalPowerAmps.value);
-  const intensityToInstall = intensityToInstallFeeding.value;
-  if (!Number.isFinite(intensityNominal) || intensityNominal <= 0) {
-    return null;
-  }
-  if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
-    return null;
-  }
-  if (typeof intensityToInstall !== "number") {
-    return null;
-  }
-  const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[intensityToInstall];
-  if (!Number.isFinite(impedance)) {
-    return null;
-  }
-  return Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
-};
-const voltageDropPercentL2 = computed(() =>
-  getVoltageDropPercentForLength(Number(formState.total_distance) / 2)
-);
-const voltageDropPercentL4 = computed(() =>
-  getVoltageDropPercentForLength(Number(formState.total_distance) / 4)
-);
-const voltageDropPercentL6 = computed(() =>
-  getVoltageDropPercentForLength(Number(formState.total_distance) / 6)
-);
-const recommendedFeedingType = computed(() => {
-  const dropL2 = voltageDropPercentL2.value;
-  if (Number.isFinite(dropL2) && dropL2 < 3) {
-    return "ALIMENTACIÓN CENTRAL = L/2";
-  }
-  const dropL4 = voltageDropPercentL4.value;
-  if (Number.isFinite(dropL4) && dropL4 < 3) {
-    return "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4";
-  }
-  const dropL6 = voltageDropPercentL6.value;
-  if (Number.isFinite(dropL6) && dropL6 < 3) {
-    return "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6";
-  }
-  return null;
-});
-const selectedFeedingLengthMeters = computed(() => {
-  const lengthMeters = Number(formState.total_distance);
-  if (!Number.isFinite(lengthMeters)) {
-    return null;
-  }
-  switch (recommendedFeedingType.value) {
-    case "ALIMENTACIÓN CENTRAL = L/2":
-      return lengthMeters / 2;
-    case "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4":
-      return lengthMeters / 4;
-    case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
-      return lengthMeters / 6;
-    default:
-      return null;
-  }
-});
-const voltageDropPercentIntermedia = computed(() => {
-  const dropVolts = getVoltageDropVoltsForLength(selectedFeedingLengthMeters.value);
-  const nominalVoltage = Number(formState.voltage);
-  if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
-    return null;
-  }
-  if (!Number.isFinite(dropVolts)) {
-    return null;
-  }
-  return (dropVolts / nominalVoltage) * 100;
-});
-const voltageDropPercentIntermediaDisplay = computed(() => {
-  const value = voltageDropPercentIntermedia.value;
-  if (!Number.isFinite(value)) {
-    return "";
-  }
-  return value.toFixed(2);
-});
-const intensityToInstallFeeding = computed(() => {
-  const intensityNominal = Number(totalPowerAmps.value);
-  if (!Number.isFinite(intensityNominal)) {
-    return null;
-  }
-  if (intensityNominal < 40) {
-    return 40;
-  }
-  if (intensityNominal < 60) {
-    return 60;
-  }
-  if (intensityNominal < 80) {
-    return 80;
-  }
-  if (intensityNominal < 100) {
-    return 100;
-  }
-  if (intensityNominal < 140) {
-    return 140;
-  }
-  if (intensityNominal < 160) {
-    return 160;
-  }
-  if (intensityNominal < 200) {
-    return 200;
-  }
-  return 0;
-});
-const supportsSO4Intermedia = computed(() => {
-  const intensityToInstall = intensityToInstallFeeding.value;
-  const lengthMeters = Number(formState.total_distance);
-  if (typeof intensityToInstall !== "number") {
-    return null;
-  }
-  if (!Number.isFinite(lengthMeters)) {
-    return null;
-  }
-  let supportsRaw = 0;
-  if (intensityToInstall < 101) {
-    supportsRaw = lengthMeters / 2;
-  } else if (intensityToInstall > 102) {
-    supportsRaw = lengthMeters * (3 / 4);
-  }
-  return Math.ceil(supportsRaw);
-});
-const empalmesEMP4Intermedia = computed(() => {
-  const lengthMeters = Number(formState.total_distance);
-  if (!Number.isFinite(lengthMeters)) {
-    return null;
-  }
-  let empalmesRaw = 0;
-  switch (recommendedFeedingType.value) {
-    case "ALIMENTACIÓN CENTRAL = L/2":
-      empalmesRaw = lengthMeters / 4 - 2;
-      break;
-    case "ALIMENTACIÓN POR LOS DOS EXTREMOS = L/4":
-      empalmesRaw = lengthMeters / 4 - 1;
-      break;
-    case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
-      empalmesRaw = lengthMeters / 4 - 3;
-      break;
-    default:
-      empalmesRaw = 0;
-      break;
-  }
-  return Math.ceil(empalmesRaw);
-});
-const alimentacionUnidadesIntermedia = computed(() => {
-  const dropL2 = voltageDropPercentL2.value;
-  if (Number.isFinite(dropL2) && dropL2 < 3) {
-    return 1;
-  }
-  const dropL4 = voltageDropPercentL4.value;
-  if (Number.isFinite(dropL4) && dropL4 < 3) {
-    return 2;
-  }
-  const dropL6 = voltageDropPercentL6.value;
-  if (Number.isFinite(dropL6) && dropL6 < 3) {
-    return 2;
-  }
-  return null;
-});
-const alimentacionInteriorIntermedia = computed(() => {
-  const intensityToInstall = intensityToInstallFeeding.value;
-  if (typeof intensityToInstall !== "number") {
-    return null;
-  }
-  if (intensityToInstall < 70) {
-    return "AI-4";
-  }
-  if (intensityToInstall < 110) {
-    return "AI-4-100";
-  }
-  if (intensityToInstall < 150) {
-    return "AI-4-140";
-  }
-  return "Elegir según cable (desplegar abajo):";
-});
-const puntoFijoPF4Intermedia = computed(() => {
-  const dropL2 = voltageDropPercentL2.value;
-  if (Number.isFinite(dropL2) && dropL2 < 3) {
-    return 2;
-  }
-  const dropL4 = voltageDropPercentL4.value;
-  if (Number.isFinite(dropL4) && dropL4 < 3) {
-    return 1;
-  }
-  const dropL6 = voltageDropPercentL6.value;
-  if (Number.isFinite(dropL6) && dropL6 < 3) {
-    return 3;
-  }
-  return null;
-});
-const tapaExtremaTE4Intermedia = computed(() => {
-  const dropL2 = voltageDropPercentL2.value;
-  if (Number.isFinite(dropL2) && dropL2 < 3) {
-    return 2;
-  }
-  const dropL4 = voltageDropPercentL4.value;
-  if (Number.isFinite(dropL4) && dropL4 < 3) {
-    return 0;
-  }
-  const dropL6 = voltageDropPercentL6.value;
-  if (Number.isFinite(dropL6) && dropL6 < 3) {
-    return 0;
-  }
-  return null;
-});
-const su5001Intermedia = computed(() => {
-  if (!Number.isFinite(supportsSO4Intermedia.value)) {
-    return null;
-  }
-  if (!Number.isFinite(puntoFijoPF4Intermedia.value)) {
-    return null;
-  }
-  return supportsSO4Intermedia.value + puntoFijoPF4Intermedia.value;
-});
-const voltageDropMessageLine = computed(() => {
-  const dropPercent = voltageDropPercentLine.value;
-  if (!Number.isFinite(dropPercent)) {
-    return null;
-  }
-  return dropPercent < 3 ? "SE PUEDE OFERTAR ESTA LÍNEA (<3%)" : "VER OPCIONES";
-});
-const supportsSO4Line = computed(() => {
-  const intensityToInstall = intensityToInstallLine.value;
-  const lengthMeters = Number(formState.total_distance);
-  if (typeof intensityToInstall !== "number") {
-    return null;
-  }
-  if (!Number.isFinite(lengthMeters)) {
-    return null;
-  }
-  let supportsRaw = 0;
-  if (intensityToInstall < 101) {
-    supportsRaw = lengthMeters / 2;
-  } else if (intensityToInstall > 102) {
-    supportsRaw = lengthMeters * (3 / 4);
-  }
-  return Math.ceil(supportsRaw);
-});
-const empalmesEMP4Line = computed(() => {
-  const lengthMeters = Number(formState.total_distance);
-  if (!Number.isFinite(lengthMeters)) {
-    return null;
-  }
-  const empalmesRaw = lengthMeters / 4 - 1;
-  return Math.ceil(empalmesRaw);
-});
-const alimentacionExtremaLine = computed(() => {
-  const intensityToInstall = intensityToInstallLine.value;
-  if (typeof intensityToInstall !== "number") {
-    return null;
-  }
-  if (intensityToInstall < 70) {
-    return "AE-4";
-  }
-  if (intensityToInstall < 110) {
-    return "AE-4-100";
-  }
-  if (intensityToInstall < 150) {
-    return "AE-4-140";
-  }
-  return "Elegir según cable (desplegar abajo):";
-});
-const su5001Line = computed(() => {
-  if (!Number.isFinite(supportsSO4Line.value)) {
-    return null;
-  }
-  return supportsSO4Line.value + 1;
-});
+const {
+  intensityToInstallLine,
+  isConsultingLine,
+  voltageDropVoltsLine,
+  voltageDropPercentLine,
+  voltageDropPercentL2,
+  voltageDropPercentL4,
+  voltageDropPercentL6,
+  recommendedFeedingType,
+  selectedFeedingLengthMeters,
+  voltageDropPercentIntermedia,
+  voltageDropPercentIntermediaDisplay,
+  intensityToInstallFeeding,
+  supportsSO4Intermedia,
+  empalmesEMP4Intermedia,
+  alimentacionUnidadesIntermedia,
+  alimentacionInteriorIntermedia,
+  puntoFijoPF4Intermedia,
+  tapaExtremaTE4Intermedia,
+  su5001Intermedia,
+  voltageDropMessageLine,
+  supportsSO4Line,
+  empalmesEMP4Line,
+  alimentacionExtremaLine,
+  su5001Line,
+} = useLineCalculations(formState, totalPowerAmps);
 const { supportsSO4, empalmesEMP4, alimentacionExtremaRef, su5001 } = useSupports(
   formState,
   intensityToInstallAmp
