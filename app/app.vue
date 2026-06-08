@@ -246,7 +246,7 @@ const formattedState = computed(() => JSON.stringify(buildConfigPayload(), null,
 const errors = ref({});
 const { isRequiredFormComplete, handleInputValidation } = useFormValidation(formState, errors);
 
-const { handleCvInput, handleKwInput, handleGroupInput } = usePowerCalculations(formState);
+const { handleCvInput, handleKwInput, handleAmpInput, handleGroupInput } = usePowerCalculations(formState);
 
 const {
   sendModalRef,
@@ -334,14 +334,16 @@ const shouldShowRightPanelCalculations = computed(
   () => tipoRecorrido.value === "Línea recta" && formState.work_environment === "Interior"
 );
 const hasAnyRightPanelInput = computed(() => {
-  const hasGruaKw = gruas.value.some((grua) =>
-    Object.values(grua?.servicios ?? {}).some((servicio) => Number(servicio?.kw) > 0)
+  const hasGruaPower = gruas.value.some((grua) =>
+    Object.values(grua?.servicios ?? {}).some(
+      (servicio) => Number(servicio?.kw) > 0 || Number(servicio?.amp) > 0
+    )
   );
   const hasMaxPower =
     Number(formState.max_simultaneous_power_kw) > 0 ||
     Number(formState.max_simultaneous_power_cv) > 0 ||
     Number(formState.max_simultaneous_power_amp) > 0;
-  return hasGruaKw || hasMaxPower;
+  return hasGruaPower || hasMaxPower;
 });
 
 const showToast = (message, variant = "success") => {
@@ -1181,7 +1183,7 @@ const handleReset = async () => {
                     step="0.01"
                     class="input input-bordered w-full"
                     v-model.number="formState.max_simultaneous_power_amp"
-                    readonly
+                    @input="handleAmpInput"
                   />
                   <p class="text-xs text-base-content/60">Amp. (nom)</p>
                 </div>
@@ -1239,7 +1241,7 @@ const handleReset = async () => {
                             step="0.01"
                             class="input input-bordered w-24"
                             v-model.number="gruas[index - 1].servicios['Elevación principal'].amp"
-                            readonly
+                            @input="handleGroupInput(gruas[index - 1].servicios['Elevación principal'], 'amp')"
                           />
                         </td>
                         <td>
@@ -1285,7 +1287,7 @@ const handleReset = async () => {
                             step="0.01"
                             class="input input-bordered w-24"
                             v-model.number="gruas[index - 1].servicios['Elevación auxiliar'].amp"
-                            readonly
+                            @input="handleGroupInput(gruas[index - 1].servicios['Elevación auxiliar'], 'amp')"
                           />
                         </td>
                         <td>
@@ -1331,7 +1333,7 @@ const handleReset = async () => {
                             step="0.01"
                             class="input input-bordered w-24"
                             v-model.number="gruas[index - 1].servicios['Traslación grúa'].amp"
-                            readonly
+                            @input="handleGroupInput(gruas[index - 1].servicios['Traslación grúa'], 'amp')"
                           />
                         </td>
                         <td>
@@ -1377,7 +1379,7 @@ const handleReset = async () => {
                             step="0.01"
                             class="input input-bordered w-24"
                             v-model.number="gruas[index - 1].servicios['Traslación carro'].amp"
-                            readonly
+                            @input="handleGroupInput(gruas[index - 1].servicios['Traslación carro'], 'amp')"
                           />
                         </td>
                         <td>
@@ -1423,7 +1425,7 @@ const handleReset = async () => {
                             step="0.01"
                             class="input input-bordered w-24"
                             v-model.number="gruas[index - 1].servicios['Otros servicios'].amp"
-                            readonly
+                            @input="handleGroupInput(gruas[index - 1].servicios['Otros servicios'], 'amp')"
                           />
                         </td>
                         <td>

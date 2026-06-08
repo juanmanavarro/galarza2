@@ -3,6 +3,7 @@ import { selectIntensityToInstall } from "../utils/lmCatalog";
 
 type PowerGroup = {
   kw: number | null;
+  amp: number | null;
 };
 
 type Grua = {
@@ -11,6 +12,7 @@ type Grua = {
 
 type FormState = {
   max_simultaneous_power_kw: number | null;
+  max_simultaneous_power_amp: number | null;
   power_mode: string;
   voltage: number | null;
 };
@@ -25,6 +27,24 @@ const getInstalledPowerWatts = (grua: Grua) => {
       return total;
     }
     return total + kw * 1000;
+  }, 0);
+};
+
+const getInstalledIntensityAmps = (grua: Grua) => {
+  if (!grua || !grua.servicios) {
+    return 0;
+  }
+  return Object.values(grua.servicios).reduce((total, servicio) => {
+    const kw = Number(servicio?.kw);
+    if (Number.isFinite(kw) && kw > 0) {
+      return total;
+    }
+
+    const amp = Number(servicio?.amp);
+    if (!Number.isFinite(amp)) {
+      return total;
+    }
+    return total + amp;
   }, 0);
 };
 
@@ -87,14 +107,24 @@ export const useGruaAccessories = (formState: FormState, gruas: { value: Grua[] 
     }
 
     const simultaneousKw = Number(formState.max_simultaneous_power_kw);
+    const simultaneousAmp = Number(formState.max_simultaneous_power_amp);
     const useSimultaneousPower =
       formState.power_mode === "simultanea" &&
       Number.isFinite(simultaneousKw) &&
       simultaneousKw > 0;
+    const useSimultaneousIntensity =
+      formState.power_mode === "simultanea" &&
+      !useSimultaneousPower &&
+      Number.isFinite(simultaneousAmp) &&
+      simultaneousAmp > 0;
 
     return gruas.value.map((grua) => {
+      if (useSimultaneousIntensity) {
+        return selectIntensityToInstall(simultaneousAmp, { zeroAsNoSelection: true });
+      }
+
       const powerWatts = useSimultaneousPower ? simultaneousKw * 1000 : getInstalledPowerWatts(grua);
-      const intensityNominal = getNominalIntensityAmps(powerWatts, voltage);
+      const intensityNominal = getInstalledIntensityAmps(grua) + getNominalIntensityAmps(powerWatts, voltage);
       return selectIntensityToInstall(intensityNominal, { zeroAsNoSelection: true });
     });
   });

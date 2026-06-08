@@ -9,8 +9,9 @@ export const usePowerCalculations = (formState: {
   max_simultaneous_power_kw: number | null;
   max_simultaneous_power_amp: number | null;
 }) => {
-  const convertCvToKw = (value: number) => Number((value * 1.36).toFixed(2));
-  const convertKwToCv = (value: number) => Number((value * 0.73).toFixed(2));
+  const CV_TO_KW = 0.7355;
+  const convertCvToKw = (value: number) => Number((value * CV_TO_KW).toFixed(2));
+  const convertKwToCv = (value: number) => Number((value / CV_TO_KW).toFixed(2));
   const calculateAmp = (kw: number) =>
     Number(((kw * 1000) / (Math.sqrt(3) * 380 * 0.8)).toFixed(2));
 
@@ -49,15 +50,35 @@ export const usePowerCalculations = (formState: {
     formState.max_simultaneous_power_amp = calculateAmp(value);
   };
 
-  const handleGroupInput = (group: PowerGroup, source: "cv" | "kw") => {
-    const raw = source === "cv" ? group.cv : group.kw;
+  const handleAmpInput = (event: Event) => {
+    const raw = (event.target as HTMLInputElement | null)?.value ?? "";
+    if (raw.trim() === "") {
+      return;
+    }
+
+    const value = Number(raw);
+    if (!Number.isFinite(value)) {
+      return;
+    }
+
+    formState.max_simultaneous_power_cv = null;
+    formState.max_simultaneous_power_kw = null;
+  };
+
+  const handleGroupInput = (group: PowerGroup, source: "cv" | "kw" | "amp") => {
+    const raw = group[source];
     if (raw === null || raw === undefined || String(raw).trim() === "") {
       if (source === "cv") {
         group.kw = null;
+        group.amp = null;
       } else {
         group.cv = null;
+        if (source === "kw") {
+          group.amp = null;
+        } else {
+          group.kw = null;
+        }
       }
-      group.amp = null;
       return;
     }
 
@@ -73,6 +94,12 @@ export const usePowerCalculations = (formState: {
       return;
     }
 
+    if (source === "amp") {
+      group.cv = null;
+      group.kw = null;
+      return;
+    }
+
     group.cv = convertKwToCv(value);
     group.amp = calculateAmp(value);
   };
@@ -80,6 +107,7 @@ export const usePowerCalculations = (formState: {
   return {
     handleCvInput,
     handleKwInput,
+    handleAmpInput,
     handleGroupInput,
   };
 };
