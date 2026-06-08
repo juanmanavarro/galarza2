@@ -1,6 +1,6 @@
 export const FORM_VALIDATION_LIMITS = {
   machines: { min: 1, max: 4 },
-  totalDistance: { min: 1, max: 280 },
+  totalDistance: { min: 1 },
   curveAngle: { min: 0, max: 360 },
   curveDimension: { min: 0 },
   feedingPointDistance: { min: 0 },

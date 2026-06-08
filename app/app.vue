@@ -9,6 +9,10 @@ import { useSupports } from "../composables/useSupports";
 import { useGruaAccessories } from "../composables/useGruaAccessories";
 import { useVersionedAsset } from "../composables/useVersionedAsset";
 import { useLineCalculations } from "../composables/useLineCalculations";
+import {
+  TECHNICAL_CONSULTATION_REQUIRED_MESSAGE,
+  requiresTechnicalConsultation,
+} from "../utils/lmCatalog";
 
 const STORAGE_KEY = "galarza2-config-state";
 const AUTH_STORAGE_KEY = "galarza2-auth-unlocked";
@@ -35,6 +39,7 @@ const createInitialFormState = () => ({
     { tramo_recto: null, radio: null, angulo: null, longitud: null },
   ],
   work_environment: "Interior",
+  has_mixed_indoor_outdoor_sections: "0",
   feeding_point_position: "extreme",
   feeding_point_position_distance: null,
   environmental_condition: "normal",
@@ -54,6 +59,7 @@ const createInitialFormState = () => ({
   max_amp: null,
   intensity_to_install_amp: null,
   supply_support_arms: "0",
+  has_sectioned_zones: "0",
   sketch_file: "",
   info: "",
 });
@@ -329,6 +335,18 @@ const { supportsSO4, empalmesEMP4, alimentacionExtremaRef, su5001 } = useSupport
   intensityToInstallAmp
 );
 const { tomacorrientesByGrua, brazoArrastreByGrua } = useGruaAccessories(formState, gruas);
+const shouldRequireTechnicalConsultation = computed(() =>
+  requiresTechnicalConsultation({
+    totalDistance: formState.total_distance,
+    environmentalCondition: formState.environmental_condition,
+    hasMixedIndoorOutdoorSections: formState.has_mixed_indoor_outdoor_sections,
+    workEnvironment: formState.work_environment,
+    minTemperature: formState.min_temperature,
+    maxTemperature: formState.max_temperature,
+    amperage: totalPowerAmps.value,
+    hasSectionedZones: formState.has_sectioned_zones,
+  })
+);
 const shouldShowRightPanelCalculations = computed(
   () => tipoRecorrido.value === "Línea recta" && formState.work_environment === "Interior"
 );
@@ -591,7 +609,6 @@ const handleReset = async () => {
                   name="total_distance"
                   type="number"
                   min="1"
-                  max="280"
                   step="1"
                   class="input input-bordered join-item w-full"
                   v-model.number="formState.total_distance"
@@ -892,6 +909,37 @@ const handleReset = async () => {
               </label>
               <p v-if="errors.work_environment" class="text-sm text-error">
                 {{ errors.work_environment }}
+              </p>
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="text-base font-semibold">
+                Hay tramos interiores y exteriores mezclados
+                <span class="text-error"> *</span>
+              </h2>
+              <label class="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="has_mixed_indoor_outdoor_sections"
+                  value="0"
+                  v-model="formState.has_mixed_indoor_outdoor_sections"
+                  class="radio radio-primary"
+                  required
+                />
+                <span>No</span>
+              </label>
+              <label class="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="has_mixed_indoor_outdoor_sections"
+                  value="1"
+                  v-model="formState.has_mixed_indoor_outdoor_sections"
+                  class="radio radio-primary"
+                />
+                <span>Sí</span>
+              </label>
+              <p v-if="errors.has_mixed_indoor_outdoor_sections" class="text-sm text-error">
+                {{ errors.has_mixed_indoor_outdoor_sections }}
               </p>
             </div>
 
@@ -1475,8 +1523,33 @@ const handleReset = async () => {
 
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
-                Para líneas con embudos o zonas seccionadas, remitir un croquis
+                Hay embudos o zonas seccionadas
+                <span class="text-error"> *</span>
               </h2>
+              <label class="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="has_sectioned_zones"
+                  value="0"
+                  v-model="formState.has_sectioned_zones"
+                  class="radio radio-primary"
+                  required
+                />
+                <span>No</span>
+              </label>
+              <label class="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="has_sectioned_zones"
+                  value="1"
+                  v-model="formState.has_sectioned_zones"
+                  class="radio radio-primary"
+                />
+                <span>Sí</span>
+              </label>
+              <p v-if="errors.has_sectioned_zones" class="text-sm text-error">
+                {{ errors.has_sectioned_zones }}
+              </p>
               <div class="max-w-sm space-y-2">
                 <label class="label-text" for="fileInputLabel">
                   Para líneas con embudos o zonas seccionadas por favor remitir un croquis
@@ -1529,6 +1602,18 @@ const handleReset = async () => {
                 <ConfigurationImage :config="formState" />
               </section>
             </div>
+          </div>
+          <div
+            v-else-if="shouldRequireTechnicalConsultation"
+            class="results-panel scroll-stable flex-1 min-w-0 min-h-0 overflow-y-auto pr-2 flex flex-col gap-6"
+          >
+            <section class="card bg-base-200 shadow-sm w-full">
+              <div class="card-body">
+                <p class="text-sm font-semibold text-warning">
+                  {{ TECHNICAL_CONSULTATION_REQUIRED_MESSAGE }}
+                </p>
+              </div>
+            </section>
           </div>
           <div
             v-else-if="shouldShowRightPanelCalculations"

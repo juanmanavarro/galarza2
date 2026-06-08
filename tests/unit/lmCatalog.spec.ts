@@ -3,7 +3,19 @@ import {
   getEmpalmesEMP4IntermediaCount,
   getEmpalmesEMP4LineCount,
   getSupportsSO4Count,
+  requiresTechnicalConsultation,
 } from "../../utils/lmCatalog";
+
+const baseTechnicalConsultationInput = {
+  totalDistance: 80,
+  environmentalCondition: "normal",
+  hasMixedIndoorOutdoorSections: "0",
+  workEnvironment: "Interior",
+  minTemperature: null,
+  maxTemperature: null,
+  amperage: 100,
+  hasSectionedZones: "0",
+};
 
 describe("support counts", () => {
   it("uses L/2 for interior LM40 to LM100", () => {
@@ -45,5 +57,53 @@ describe("splice counts", () => {
   it("applies 1/6 double intermediate feeding deductions", () => {
     expect(getEmpalmesEMP4IntermediaCount(40, "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6")).toBe(7);
     expect(getEmpalmesEMP4IntermediaCount(42, "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6")).toBe(8);
+  });
+});
+
+describe("technical consultation conditions", () => {
+  it("does not require consultation for a standard interior configuration", () => {
+    expect(requiresTechnicalConsultation(baseTechnicalConsultationInput)).toBe(false);
+  });
+
+  it("requires consultation from 280 meters", () => {
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, totalDistance: 280 })).toBe(true);
+  });
+
+  it("requires consultation for corrosive environments", () => {
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, environmentalCondition: "corrosive" })).toBe(true);
+  });
+
+  it("requires consultation for mixed indoor and outdoor sections", () => {
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, hasMixedIndoorOutdoorSections: "1" })).toBe(true);
+  });
+
+  it("requires consultation when interior temperature is outside -10 to 50 degrees", () => {
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, minTemperature: -11 })).toBe(true);
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, maxTemperature: 51 })).toBe(true);
+  });
+
+  it("requires consultation when exterior temperature is outside -30 to 60 degrees", () => {
+    expect(
+      requiresTechnicalConsultation({
+        ...baseTechnicalConsultationInput,
+        workEnvironment: "Exterior",
+        minTemperature: -31,
+      })
+    ).toBe(true);
+    expect(
+      requiresTechnicalConsultation({
+        ...baseTechnicalConsultationInput,
+        workEnvironment: "Exterior",
+        maxTemperature: 61,
+      })
+    ).toBe(true);
+  });
+
+  it("requires consultation above 200 amps", () => {
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, amperage: 201 })).toBe(true);
+  });
+
+  it("requires consultation for funnels or sectioned zones", () => {
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, hasSectionedZones: "1" })).toBe(true);
   });
 });

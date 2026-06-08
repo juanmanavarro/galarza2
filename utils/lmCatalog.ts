@@ -1,4 +1,6 @@
 export const CONSULT_TECHNICAL_MESSAGE = "Consultar dpto. técnico";
+export const TECHNICAL_CONSULTATION_REQUIRED_MESSAGE =
+  "Esta configuración requiere consulta con el servicio técnico de IGA.";
 export const VOLTAGE_DROP_LIMIT_PERCENT = 3;
 
 export const INTENSITY_OPTIONS = [40, 60, 80, 100, 140, 160, 200] as const;
@@ -126,6 +128,54 @@ export const getVoltageDropOfferMessage = (dropPercent: number | null, fallback 
 
 export const isVoltageDropAccepted = (dropPercent: number | null) =>
   Number.isFinite(dropPercent) && (dropPercent as number) < VOLTAGE_DROP_LIMIT_PERCENT;
+
+export const requiresTechnicalConsultation = ({
+  totalDistance,
+  environmentalCondition,
+  hasMixedIndoorOutdoorSections,
+  workEnvironment,
+  minTemperature,
+  maxTemperature,
+  amperage,
+  hasSectionedZones,
+}: {
+  totalDistance: number | null;
+  environmentalCondition: string;
+  hasMixedIndoorOutdoorSections: string;
+  workEnvironment: string;
+  minTemperature: number | null;
+  maxTemperature: number | null;
+  amperage: number | null;
+  hasSectionedZones: string;
+}) => {
+  const lengthMeters = Number(totalDistance);
+  if (Number.isFinite(lengthMeters) && lengthMeters >= 280) {
+    return true;
+  }
+  if (environmentalCondition === "corrosive") {
+    return true;
+  }
+  if (hasMixedIndoorOutdoorSections === "1") {
+    return true;
+  }
+
+  const minAllowed = workEnvironment === "Exterior" ? -30 : -10;
+  const maxAllowed = workEnvironment === "Exterior" ? 60 : 50;
+  const minTemp = Number(minTemperature);
+  const maxTemp = Number(maxTemperature);
+  if (Number.isFinite(minTemp) && minTemp < minAllowed) {
+    return true;
+  }
+  if (Number.isFinite(maxTemp) && maxTemp > maxAllowed) {
+    return true;
+  }
+
+  const amps = Number(amperage);
+  if (Number.isFinite(amps) && amps > 200) {
+    return true;
+  }
+  return hasSectionedZones === "1";
+};
 
 export const getSupportsSO4Count = (
   intensityToInstall: number | string | null,

@@ -15,12 +15,14 @@ type FormState = {
   type_of_line: string;
   tramos: Tramo[];
   work_environment: string;
+  has_mixed_indoor_outdoor_sections: string;
   feeding_point_position: string;
   feeding_point_position_distance: number | null;
   environmental_condition: string;
   environmental_condition_corrosive: string;
   protected_line: string;
   supply_support_arms: string;
+  has_sectioned_zones: string;
   min_temperature: number | null;
   max_temperature: number | null;
   voltage: number | null;
@@ -94,6 +96,9 @@ export const useFormValidation = (formState: FormState, errors: { value: ErrorsS
     if (!isNonEmptyString(formState.work_environment)) {
       return false;
     }
+    if (!isNonEmptyString(formState.has_mixed_indoor_outdoor_sections)) {
+      return false;
+    }
     if (!isNonEmptyString(formState.feeding_point_position)) {
       return false;
     }
@@ -116,6 +121,9 @@ export const useFormValidation = (formState: FormState, errors: { value: ErrorsS
       return false;
     }
     if (!isNonEmptyString(formState.supply_support_arms)) {
+      return false;
+    }
+    if (!isNonEmptyString(formState.has_sectioned_zones)) {
       return false;
     }
     return true;

@@ -66,4 +66,13 @@ test.describe("power and intensity inputs", () => {
     await expect(page.locator('input[name="main_lift_amp_1"]')).not.toHaveValue("");
     await expect(page.locator("#totalPowerWatts")).toHaveValue("5888");
   });
+
+  test("shows technical consultation instead of automatic calculation from 280 meters", async ({ page }) => {
+    await page.locator('input[name="total_distance"]').fill("280");
+
+    await expect(
+      page.getByText("Esta configuración requiere consulta con el servicio técnico de IGA.")
+    ).toBeVisible();
+    await expect(page.locator("#totalPowerWatts")).toHaveCount(0);
+  });
 });
