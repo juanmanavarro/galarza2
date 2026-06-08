@@ -127,46 +127,59 @@ export const getVoltageDropOfferMessage = (dropPercent: number | null, fallback 
 export const isVoltageDropAccepted = (dropPercent: number | null) =>
   Number.isFinite(dropPercent) && (dropPercent as number) < VOLTAGE_DROP_LIMIT_PERCENT;
 
-export const getSupportsSO4Count = (intensityToInstall: number | string | null, lengthMeters: number) => {
+export const getSupportsSO4Count = (
+  intensityToInstall: number | string | null,
+  lengthMeters: number,
+  workEnvironment = "Interior"
+) => {
   if (typeof intensityToInstall !== "number") {
     return null;
   }
   if (!Number.isFinite(lengthMeters)) {
     return null;
   }
-  let supportsRaw = 0;
-  if (intensityToInstall < 101) {
-    supportsRaw = lengthMeters / 2;
-  } else if (intensityToInstall > 102) {
-    supportsRaw = lengthMeters * (3 / 4);
+
+  if (workEnvironment === "Exterior") {
+    return Math.ceil(lengthMeters / (intensityToInstall >= 160 ? 1 : 1.333));
   }
-  return Math.ceil(supportsRaw);
+
+  return Math.ceil(lengthMeters / (intensityToInstall >= 140 ? 1.333 : 2));
 };
 
-export const getEmpalmesEMP4LineCount = (lengthMeters: number) => {
+const getEmpalmesEMP4Count = (
+  lengthMeters: number,
+  exactDivisionDeduction: number,
+  nonExactDivisionDeduction: number
+) => {
   if (!Number.isFinite(lengthMeters)) {
     return null;
   }
-  return Math.ceil(lengthMeters / 4 - 1);
+  const sections = Math.floor(lengthMeters / 4);
+  const deduction = Number.isInteger(lengthMeters / 4)
+    ? exactDivisionDeduction
+    : nonExactDivisionDeduction;
+  return Math.max(0, sections - deduction);
+};
+
+export const getEmpalmesEMP4LineCount = (lengthMeters: number, feedingPointPosition = "extreme") => {
+  switch (feedingPointPosition) {
+    case "central":
+    case "distance":
+      return getEmpalmesEMP4Count(lengthMeters, 2, 1);
+    default:
+      return getEmpalmesEMP4Count(lengthMeters, 1, 0);
+  }
 };
 
 export const getEmpalmesEMP4IntermediaCount = (lengthMeters: number, recommendedFeedingType: string | null) => {
-  if (!Number.isFinite(lengthMeters)) {
-    return null;
-  }
-  let empalmesRaw = 0;
   switch (recommendedFeedingType) {
     case "ALIMENTACIÓN CENTRAL = L/2":
-      empalmesRaw = lengthMeters / 4 - 2;
-      break;
+      return getEmpalmesEMP4Count(lengthMeters, 2, 1);
     case "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6":
-      empalmesRaw = lengthMeters / 4 - 3;
-      break;
+      return getEmpalmesEMP4Count(lengthMeters, 3, 2);
     default:
-      empalmesRaw = 0;
-      break;
+      return getEmpalmesEMP4Count(lengthMeters, 0, 0);
   }
-  return Math.ceil(empalmesRaw);
 };
 
 export const getExtremeFeedingRef = (intensityToInstall: number | string | null) => {

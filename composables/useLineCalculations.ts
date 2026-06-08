@@ -21,6 +21,7 @@ type FormState = {
   voltage: number | null;
   feeding_point_position: string;
   feeding_point_position_distance: number | null;
+  work_environment: string;
 };
 
 export const useLineCalculations = (
@@ -146,7 +147,11 @@ export const useLineCalculations = (
   });
 
   const supportsSO4Intermedia = computed(() =>
-    getSupportsSO4Count(intensityToInstallFeeding.value, Number(formState.total_distance))
+    getSupportsSO4Count(
+      intensityToInstallFeeding.value,
+      Number(formState.total_distance),
+      formState.work_environment
+    )
   );
 
   const empalmesEMP4Intermedia = computed(() =>
@@ -204,10 +209,16 @@ export const useLineCalculations = (
   );
 
   const supportsSO4Line = computed(() =>
-    getSupportsSO4Count(intensityToInstallLine.value, Number(formState.total_distance))
+    getSupportsSO4Count(
+      intensityToInstallLine.value,
+      Number(formState.total_distance),
+      formState.work_environment
+    )
   );
 
-  const empalmesEMP4Line = computed(() => getEmpalmesEMP4LineCount(Number(formState.total_distance)));
+  const empalmesEMP4Line = computed(() =>
+    getEmpalmesEMP4LineCount(Number(formState.total_distance), formState.feeding_point_position)
+  );
 
   const alimentacionExtremaLine = computed(() => getExtremeFeedingRef(intensityToInstallLine.value));
 

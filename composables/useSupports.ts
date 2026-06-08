@@ -7,6 +7,8 @@ import {
 
 type FormState = {
   total_distance: number | null;
+  work_environment: string;
+  feeding_point_position: string;
 };
 
 export const useSupports = (
@@ -18,7 +20,7 @@ export const useSupports = (
     if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
       return null;
     }
-    return getSupportsSO4Count(intensityToInstallAmp.value, lengthMeters);
+    return getSupportsSO4Count(intensityToInstallAmp.value, lengthMeters, formState.work_environment);
   });
 
   const alimentacionExtremaRef = computed(() => getExtremeFeedingRef(intensityToInstallAmp.value));
@@ -27,7 +29,7 @@ export const useSupports = (
     supportsSO4,
     empalmesEMP4: computed(() => {
       const lengthMeters = Number(formState.total_distance);
-      return getEmpalmesEMP4LineCount(lengthMeters);
+      return getEmpalmesEMP4LineCount(lengthMeters, formState.feeding_point_position);
     }),
     alimentacionExtremaRef,
     su5001: computed(() => {
