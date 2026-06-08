@@ -1,4 +1,5 @@
 import { computed } from "vue";
+import { FORM_VALIDATION_LIMITS, FORM_VALIDATION_MESSAGES } from "../utils/formValidationRules";
 
 type Tramo = {
   radio: number | null;
@@ -45,19 +46,19 @@ const isValidNumber = (value: unknown, { min = null, max = null } = {}) => {
 const getErrorMessage = (target: HTMLInputElement) => {
   const { validity } = target;
   if (validity.valueMissing) {
-    return "Este campo es obligatorio.";
+    return FORM_VALIDATION_MESSAGES.required;
   }
   if (validity.rangeUnderflow) {
     return `Valor mínimo: ${target.min}.`;
   }
   if (validity.rangeOverflow) {
     if (target.max === "280") {
-      return "Valor máximo: 280. Para más recorrido contacte con el servicio técnico.";
+      return FORM_VALIDATION_MESSAGES.maxDistanceTechnicalConsultation;
     }
     return `Valor máximo: ${target.max}.`;
   }
   if (validity.stepMismatch || validity.typeMismatch || validity.badInput) {
-    return "Formato inválido.";
+    return FORM_VALIDATION_MESSAGES.invalidFormat;
   }
   return target.validationMessage || "Campo inválido.";
 };
@@ -67,26 +68,26 @@ export const useFormValidation = (formState: FormState, errors: { value: ErrorsS
     if (!isNonEmptyString(formState.application_industry_type)) {
       return false;
     }
-    if (!isValidNumber(formState.number_and_type_of_machines_to_feed, { min: 1, max: 4 })) {
+    if (!isValidNumber(formState.number_and_type_of_machines_to_feed, FORM_VALIDATION_LIMITS.machines)) {
       return false;
     }
     if (!isNonEmptyString(formState.type_of_conductors_to_use)) {
       return false;
     }
-    if (!isValidNumber(formState.total_distance, { min: 1, max: 280 })) {
+    if (!isValidNumber(formState.total_distance, FORM_VALIDATION_LIMITS.totalDistance)) {
       return false;
     }
     if (!isNonEmptyString(formState.type_of_line)) {
       return false;
     }
     if (formState.type_of_line === "Línea curva") {
-      if (!isValidNumber(formState.tramos[0]?.radio, { min: 0 })) {
+      if (!isValidNumber(formState.tramos[0]?.radio, FORM_VALIDATION_LIMITS.curveDimension)) {
         return false;
       }
-      if (!isValidNumber(formState.tramos[0]?.angulo, { min: 0, max: 360 })) {
+      if (!isValidNumber(formState.tramos[0]?.angulo, FORM_VALIDATION_LIMITS.curveAngle)) {
         return false;
       }
-      if (!isValidNumber(formState.tramos[0]?.longitud, { min: 0 })) {
+      if (!isValidNumber(formState.tramos[0]?.longitud, FORM_VALIDATION_LIMITS.curveDimension)) {
         return false;
       }
     }
@@ -98,7 +99,7 @@ export const useFormValidation = (formState: FormState, errors: { value: ErrorsS
     }
     if (
       formState.feeding_point_position === "distance" &&
-      !isValidNumber(formState.feeding_point_position_distance, { min: 0 })
+      !isValidNumber(formState.feeding_point_position_distance, FORM_VALIDATION_LIMITS.feedingPointDistance)
     ) {
       return false;
     }
@@ -130,7 +131,7 @@ export const useFormValidation = (formState: FormState, errors: { value: ErrorsS
       const group = document.querySelectorAll(`input[name="${target.name}"]`);
       const checked = Array.from(group).some((input) => (input as HTMLInputElement).checked);
       if (!checked && target.required) {
-        errors.value[target.name] = "Selecciona una opción.";
+        errors.value[target.name] = FORM_VALIDATION_MESSAGES.selectOption;
       } else {
         delete errors.value[target.name];
       }
@@ -147,15 +148,18 @@ export const useFormValidation = (formState: FormState, errors: { value: ErrorsS
       const minTemp = formState.min_temperature;
       const maxTemp = formState.max_temperature;
       if (minTemp !== null && maxTemp !== null && minTemp >= maxTemp) {
-        errors.value.min_temperature = "La temperatura mínima debe ser menor que la temperatura máxima.";
+        errors.value.min_temperature = FORM_VALIDATION_MESSAGES.minTemperatureBeforeMax;
       } else {
         delete errors.value.min_temperature;
       }
     }
 
     if (target.name === "voltage") {
-      if (formState.voltage !== null && Number(formState.voltage) > 500) {
-        errors.value.voltage = "Para un voltaje mayor a 500V contacte con el servicio técnico.";
+      if (
+        formState.voltage !== null &&
+        Number(formState.voltage) > FORM_VALIDATION_LIMITS.voltageTechnicalConsultation
+      ) {
+        errors.value.voltage = FORM_VALIDATION_MESSAGES.voltageTechnicalConsultation;
       } else {
         delete errors.value.voltage;
       }
