@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from "vue";
+import { useVersionedAsset } from "../../composables/useVersionedAsset";
 
 const props = defineProps({
   config: {
@@ -7,15 +8,16 @@ const props = defineProps({
     required: true,
   },
 });
+const versionedAsset = useVersionedAsset();
 
 const imageMap = {
-  default: { src: "/img/AE 2m.webp", alt: "AE 2m" },
-  curvaNaranja: { src: "/img/Curva naranja.webp", alt: "Curva naranja" },
-  curvaGris: { src: "/img/Curva gris.webp", alt: "Curva gris" },
-  rectaInteriorExtremo: { src: "/img/recta-interior-extremo.webp", alt: "Recta interior extremo" },
-  ai2m: { src: "/img/AI 2m.webp", alt: "AI 2m" },
-  aeE1333: { src: "/img/AE-E 1,333m.webp", alt: "AE-E 1,333m" },
-  aiE1333: { src: "/img/AI-E 1,333m.webp", alt: "AI-E 1,333m" },
+  default: { src: versionedAsset("/img/AE 2m.webp"), alt: "AE 2m" },
+  curvaNaranja: { src: versionedAsset("/img/Curva naranja.webp"), alt: "Curva naranja" },
+  curvaGris: { src: versionedAsset("/img/Curva gris.webp"), alt: "Curva gris" },
+  rectaInteriorExtremo: { src: versionedAsset("/img/recta-interior-extremo.webp"), alt: "Recta interior extremo" },
+  ai2m: { src: versionedAsset("/img/AI 2m.webp"), alt: "AI 2m" },
+  aeE1333: { src: versionedAsset("/img/AE-E 1,333m.webp"), alt: "AE-E 1,333m" },
+  aiE1333: { src: versionedAsset("/img/AI-E 1,333m.webp"), alt: "AI-E 1,333m" },
 };
 
 const selectImage = (config) => {

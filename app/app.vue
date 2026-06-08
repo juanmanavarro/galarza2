@@ -7,11 +7,13 @@ import { useVoltageDrop } from "../composables/useVoltageDrop";
 import { useFormValidation } from "../composables/useFormValidation";
 import { useSupports } from "../composables/useSupports";
 import { useGruaAccessories } from "../composables/useGruaAccessories";
+import { useVersionedAsset } from "../composables/useVersionedAsset";
 
 const STORAGE_KEY = "galarza2-config-state";
 const AUTH_STORAGE_KEY = "galarza2-auth-unlocked";
 const ACCESS_PASSWORD = "galarz62024";
 const currentYear = new Date().getFullYear();
+const versionedAsset = useVersionedAsset();
 
 const createInitialFormState = () => ({
   name: "",
@@ -742,7 +744,7 @@ const handleReset = async () => {
     <header class="navbar bg-base-200 px-6 fixed top-0 inset-x-0 z-50 h-16">
       <div class="relative mx-auto flex w-full max-w-[1500px] items-center">
         <a class="flex items-center gap-3 text-xl font-semibold tracking-wide" href="#">
-          <img src="/favicon.png" alt="Logo LM" class="h-11 w-11" />
+          <img :src="versionedAsset('/favicon.png')" alt="Logo LM" class="h-11 w-11" />
         </a>
         <span class="absolute inset-x-0 text-center text-xl font-semibold tracking-wide">
           Configurador para líneas conductoras LMss
