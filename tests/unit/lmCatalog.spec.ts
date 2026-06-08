@@ -89,6 +89,21 @@ describe("technical consultation conditions", () => {
     expect(requiresTechnicalConsultation(baseTechnicalConsultationInput)).toBe(false);
   });
 
+  it("does not require consultation at accepted business-rule limits", () => {
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, totalDistance: 279 })).toBe(false);
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, minTemperature: -10 })).toBe(false);
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, maxTemperature: 50 })).toBe(false);
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, amperage: 200 })).toBe(false);
+    expect(
+      requiresTechnicalConsultation({
+        ...baseTechnicalConsultationInput,
+        workEnvironment: "Exterior",
+        minTemperature: -30,
+        maxTemperature: 60,
+      })
+    ).toBe(false);
+  });
+
   it("requires consultation from 280 meters", () => {
     expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, totalDistance: 280 })).toBe(true);
   });

@@ -75,4 +75,12 @@ test.describe("power and intensity inputs", () => {
     ).toBeVisible();
     await expect(page.locator("#totalPowerWatts")).toHaveCount(0);
   });
+
+  test("does not show technical consultation at 279 meters", async ({ page }) => {
+    await page.locator('input[name="total_distance"]').fill("279");
+
+    await expect(
+      page.getByText("Esta configuración requiere consulta con el servicio técnico de IGA.")
+    ).toHaveCount(0);
+  });
 });
