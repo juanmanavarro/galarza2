@@ -42,8 +42,8 @@ const createInitialFormState = () => ({
   has_mixed_indoor_outdoor_sections: "0",
   feeding_point_position: "extreme",
   feeding_point_position_distance: null,
-  environmental_condition: "normal",
-  environmental_condition_corrosive: "",
+  has_dust: "0",
+  has_corrosive_elements: "0",
   protected_line: "0",
   min_temperature: null,
   max_temperature: null,
@@ -93,12 +93,6 @@ const puntoAlimentacion = computed({
   get: () => formState.feeding_point_position,
   set: (value) => {
     formState.feeding_point_position = value;
-  },
-});
-const condicionesAmbientales = computed({
-  get: () => formState.environmental_condition,
-  set: (value) => {
-    formState.environmental_condition = value;
   },
 });
 const tipoRecorrido = computed({
@@ -338,7 +332,7 @@ const { tomacorrientesByGrua, brazoArrastreByGrua } = useGruaAccessories(formSta
 const shouldRequireTechnicalConsultation = computed(() =>
   requiresTechnicalConsultation({
     totalDistance: formState.total_distance,
-    environmentalCondition: formState.environmental_condition,
+    hasCorrosiveElements: formState.has_corrosive_elements,
     hasMixedIndoorOutdoorSections: formState.has_mixed_indoor_outdoor_sections,
     workEnvironment: formState.work_environment,
     minTemperature: formState.min_temperature,
@@ -1020,63 +1014,63 @@ const handleReset = async () => {
 
             <div class="space-y-3">
               <h2 class="text-base font-semibold">
-                Condiciones ambientales
+                Hay polvo
                 <span class="text-error"> *</span>
               </h2>
               <label class="flex items-center gap-3">
                 <input
-                  v-model="condicionesAmbientales"
                   type="radio"
-                  name="environmental_condition"
-                  value="normal"
+                  name="has_dust"
+                  value="0"
+                  v-model="formState.has_dust"
                   class="radio radio-primary"
                   required
                 />
-                <span>Normal</span>
+                <span>No</span>
               </label>
               <label class="flex items-center gap-3">
                 <input
-                  v-model="condicionesAmbientales"
                   type="radio"
-                  name="environmental_condition"
-                  value="dust"
+                  name="has_dust"
+                  value="1"
+                  v-model="formState.has_dust"
                   class="radio radio-primary"
                 />
-                <span>Polvo</span>
+                <span>Sí</span>
               </label>
-              <label class="flex items-center gap-3">
-                <input
-                  v-model="condicionesAmbientales"
-                  type="radio"
-                  name="environmental_condition"
-                  value="humidity"
-                  class="radio radio-primary"
-                />
-                <span>Humedad</span>
-              </label>
-              <label class="flex items-center gap-3">
-                <input
-                  v-model="condicionesAmbientales"
-                  type="radio"
-                  name="environmental_condition"
-                  value="corrosive"
-                  class="radio radio-primary"
-                />
-                <span>Elementos corrosivos</span>
-              </label>
-              <textarea
-                name="environmental_condition_corrosive"
-                class="textarea textarea-bordered w-full"
-                rows="4"
-                :disabled="condicionesAmbientales !== 'corrosive'"
-                :required="condicionesAmbientales === 'corrosive'"
-                v-model="formState.environmental_condition_corrosive"
-              />
-              <p v-if="errors.environmental_condition" class="text-sm text-error">
-                {{ errors.environmental_condition }}
+              <p v-if="errors.has_dust" class="text-sm text-error">
+                {{ errors.has_dust }}
               </p>
-              <p v-if="errors.environmental_condition_corrosive" class="text-sm text-error">
-                {{ errors.environmental_condition_corrosive }}
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="text-base font-semibold">
+                Hay elementos corrosivos
+                <span class="text-error"> *</span>
+              </h2>
+              <label class="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="has_corrosive_elements"
+                  value="0"
+                  v-model="formState.has_corrosive_elements"
+                  class="radio radio-primary"
+                  required
+                />
+                <span>No</span>
+              </label>
+              <label class="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="has_corrosive_elements"
+                  value="1"
+                  v-model="formState.has_corrosive_elements"
+                  class="radio radio-primary"
+                />
+                <span>Sí</span>
+              </label>
+              <p v-if="errors.has_corrosive_elements" class="text-sm text-error">
+                {{ errors.has_corrosive_elements }}
               </p>
             </div>
 

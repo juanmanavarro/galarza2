@@ -12,7 +12,7 @@ import {
 
 const baseTechnicalConsultationInput = {
   totalDistance: 80,
-  environmentalCondition: "normal",
+  hasCorrosiveElements: "0",
   hasMixedIndoorOutdoorSections: "0",
   workEnvironment: "Interior",
   minTemperature: null,
@@ -127,7 +127,7 @@ describe("technical consultation conditions", () => {
   });
 
   it("requires consultation for corrosive environments", () => {
-    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, environmentalCondition: "corrosive" })).toBe(true);
+    expect(requiresTechnicalConsultation({ ...baseTechnicalConsultationInput, hasCorrosiveElements: "1" })).toBe(true);
   });
 
   it("requires consultation for mixed indoor and outdoor sections", () => {

@@ -76,6 +76,25 @@ test.describe("power and intensity inputs", () => {
     await expect(page.locator("#totalPowerWatts")).toHaveCount(0);
   });
 
+  test("shows explicit environmental yes/no fields without humidity option", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "Hay polvo *" })).toBeVisible();
+    await expect(page.locator('input[name="has_dust"][value="0"]')).toBeChecked();
+    await expect(page.locator('input[name="has_dust"][value="1"]')).not.toBeChecked();
+    await expect(page.getByRole("heading", { name: "Hay elementos corrosivos *" })).toBeVisible();
+    await expect(page.locator('input[name="has_corrosive_elements"][value="0"]')).toBeChecked();
+    await expect(page.locator('input[name="has_corrosive_elements"][value="1"]')).not.toBeChecked();
+    await expect(page.getByText("Humedad")).toHaveCount(0);
+  });
+
+  test("shows technical consultation for corrosive elements", async ({ page }) => {
+    await page.locator('input[name="has_corrosive_elements"][value="1"]').check();
+
+    await expect(
+      page.getByText("Esta configuración requiere consulta con el servicio técnico de IGA.")
+    ).toBeVisible();
+    await expect(page.locator("#totalPowerWatts")).toHaveCount(0);
+  });
+
   test("does not show technical consultation at 279 meters", async ({ page }) => {
     await page.locator('input[name="total_distance"]').fill("279");
 

@@ -131,7 +131,7 @@ export const isVoltageDropAccepted = (dropPercent: number | null) =>
 
 export const requiresTechnicalConsultation = ({
   totalDistance,
-  environmentalCondition,
+  hasCorrosiveElements,
   hasMixedIndoorOutdoorSections,
   workEnvironment,
   minTemperature,
@@ -140,7 +140,7 @@ export const requiresTechnicalConsultation = ({
   hasSectionedZones,
 }: {
   totalDistance: number | null;
-  environmentalCondition: string;
+  hasCorrosiveElements: string;
   hasMixedIndoorOutdoorSections: string;
   workEnvironment: string;
   minTemperature: number | null;
@@ -152,7 +152,7 @@ export const requiresTechnicalConsultation = ({
   if (Number.isFinite(lengthMeters) && lengthMeters >= 280) {
     return true;
   }
-  if (environmentalCondition === "corrosive") {
+  if (hasCorrosiveElements === "1") {
     return true;
   }
   if (hasMixedIndoorOutdoorSections === "1") {

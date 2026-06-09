@@ -18,8 +18,8 @@ type FormState = {
   has_mixed_indoor_outdoor_sections: string;
   feeding_point_position: string;
   feeding_point_position_distance: number | null;
-  environmental_condition: string;
-  environmental_condition_corrosive: string;
+  has_dust: string;
+  has_corrosive_elements: string;
   protected_line: string;
   supply_support_arms: string;
   has_sectioned_zones: string;
@@ -108,13 +108,10 @@ export const useFormValidation = (formState: FormState, errors: { value: ErrorsS
     ) {
       return false;
     }
-    if (!isNonEmptyString(formState.environmental_condition)) {
+    if (!isNonEmptyString(formState.has_dust)) {
       return false;
     }
-    if (
-      formState.environmental_condition === "corrosive" &&
-      !isNonEmptyString(formState.environmental_condition_corrosive)
-    ) {
+    if (!isNonEmptyString(formState.has_corrosive_elements)) {
       return false;
     }
     if (!isNonEmptyString(formState.protected_line)) {

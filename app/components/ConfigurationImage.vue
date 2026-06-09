@@ -37,23 +37,20 @@ const selectImage = (config) => {
   if (
     config.type_of_line === "Línea recta" &&
     config.feeding_point_position === "central" &&
-    config.work_environment === "Interior" &&
-    (config.environmental_condition === "humidity" || config.environmental_condition === "normal")
+    config.work_environment === "Interior"
   ) {
     return imageMap.ai2m;
   }
   if (
     config.type_of_line === "Línea recta" &&
     config.work_environment === "Exterior" &&
-    config.feeding_point_position === "central" &&
-    config.environmental_condition === "normal"
+    config.feeding_point_position === "central"
   ) {
     return imageMap.aeE1333;
   }
   if (
     config.work_environment === "Interior" &&
-    config.feeding_point_position === "distance" &&
-    config.environmental_condition === "normal"
+    config.feeding_point_position === "distance"
   ) {
     return imageMap.aiE1333;
   }
@@ -64,7 +61,6 @@ const selectImage = (config) => {
     config.work_environment === "Exterior" ||
     config.feeding_point_position === "extreme" ||
     config.feeding_point_position === "distance" ||
-    (config.environmental_condition === "humidity" && config.feeding_point_position === "extreme") ||
     (Number(config.min_temperature) === -20 &&
       Number(config.max_temperature) === 60 &&
       config.feeding_point_position === "extreme")
@@ -73,7 +69,6 @@ const selectImage = (config) => {
   }
 
   if (
-    (config.environmental_condition === "humidity" && config.feeding_point_position === "central") ||
     (Number(config.min_temperature) === -20 &&
       Number(config.max_temperature) === 60 &&
       config.feeding_point_position === "central")
