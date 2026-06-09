@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  CONSULT_TECHNICAL_MESSAGE,
+  calculateVoltageDropPercent,
   calculateVoltageDropVolts,
   getEmpalmesEMP4IntermediaCount,
   getEmpalmesEMP4LineCount,
@@ -7,7 +9,9 @@ import {
   getImpedanceOhmPerM,
   getIntermediateFeedingRef,
   getSupportsSO4Count,
+  isVoltageDropAccepted,
   requiresTechnicalConsultation,
+  selectIntensityToInstall,
 } from "../../utils/lmCatalog";
 
 const baseTechnicalConsultationInput = {
@@ -20,6 +24,35 @@ const baseTechnicalConsultationInput = {
   amperage: 100,
   hasSectionedZones: "0",
 };
+
+describe("LM model selection", () => {
+  it.each([
+    [0, 40],
+    [39.99, 40],
+    [40, 60],
+    [59.99, 60],
+    [60, 80],
+    [79.99, 80],
+    [80, 100],
+    [99.99, 100],
+    [100, 140],
+    [139.99, 140],
+    [140, 160],
+    [159.99, 160],
+    [160, 200],
+    [199.99, 200],
+  ])("selects the first superior LM model for %s A", (nominalIntensity, expectedModel) => {
+    expect(selectIntensityToInstall(nominalIntensity)).toBe(expectedModel);
+  });
+
+  it("requires technical consultation above LM200", () => {
+    expect(selectIntensityToInstall(200.01)).toBe(CONSULT_TECHNICAL_MESSAGE);
+  });
+
+  it("ignores non-finite nominal intensities", () => {
+    expect(selectIntensityToInstall(Number.NaN)).toBeNull();
+  });
+});
 
 describe("voltage drop coefficients", () => {
   it("uses the documented coefficient for each LM model", () => {
@@ -40,6 +73,16 @@ describe("voltage drop coefficients", () => {
         intensityToInstall: 140,
       })
     ).toBeCloseTo(Math.sqrt(3) * 100 * 80 * 0.00123);
+  });
+
+  it("calculates and classifies accepted and rejected voltage drop percentages", () => {
+    const accepted = calculateVoltageDropPercent({ dropVolts: 10, nominalVoltage: 400 });
+    const rejected = calculateVoltageDropPercent({ dropVolts: 12, nominalVoltage: 400 });
+
+    expect(accepted).toBe(2.5);
+    expect(rejected).toBe(3);
+    expect(isVoltageDropAccepted(accepted)).toBe(true);
+    expect(isVoltageDropAccepted(rejected)).toBe(false);
   });
 });
 

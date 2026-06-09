@@ -102,3 +102,26 @@ describe("voltage drop feeding alternatives", () => {
     expect(selectedFeedingLengthMeters.value).toBeNull();
   });
 });
+
+describe("line model selection by voltage drop", () => {
+  it("increases the selected LM model until voltage drop is accepted", () => {
+    const { intensityToInstallLine, voltageDropPercentLine } = useLineCalculations(
+      createFormState({ total_distance: 80, feeding_point_position: "extreme" }),
+      { value: 80 }
+    );
+
+    expect(intensityToInstallLine.value).toBe(200);
+    expect(voltageDropPercentLine.value).toBeLessThan(3);
+  });
+
+  it("requires technical consultation when no superior LM model meets voltage drop", () => {
+    const { intensityToInstallLine, voltageDropVoltsLine, voltageDropPercentLine } = useLineCalculations(
+      createFormState({ total_distance: 500, feeding_point_position: "extreme" }),
+      { value: 199 }
+    );
+
+    expect(intensityToInstallLine.value).toBe("Consultar dpto. técnico");
+    expect(voltageDropVoltsLine.value).toBeNull();
+    expect(voltageDropPercentLine.value).toBeNull();
+  });
+});
