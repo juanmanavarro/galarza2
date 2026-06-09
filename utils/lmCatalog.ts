@@ -51,6 +51,19 @@ export const getImpedanceOhmPerM = (intensityToInstall: number | string | null) 
   return impedance === undefined ? null : impedance;
 };
 
+export const getLmModelRef = (
+  intensityToInstall: number | string | null,
+  workEnvironment = "Interior"
+) => {
+  if (typeof intensityToInstall !== "number" || !Number.isFinite(intensityToInstall)) {
+    return null;
+  }
+  if (!INTENSITY_OPTIONS.includes(intensityToInstall as IntensityOption)) {
+    return null;
+  }
+  return `LM${intensityToInstall}${workEnvironment === "Exterior" ? "E" : ""}`;
+};
+
 export const calculateVoltageDropVolts = ({
   intensityNominal,
   lengthMeters,

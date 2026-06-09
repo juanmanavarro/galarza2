@@ -8,6 +8,7 @@ import {
   getExtremeFeedingRef,
   getImpedanceOhmPerM,
   getIntermediateFeedingRef,
+  getLmModelRef,
   getSupportsSO4Count,
   isVoltageDropAccepted,
   requiresTechnicalConsultation,
@@ -51,6 +52,18 @@ describe("LM model selection", () => {
 
   it("ignores non-finite nominal intensities", () => {
     expect(selectIntensityToInstall(Number.NaN)).toBeNull();
+  });
+
+  it("formats the selected LM model reference for interior and exterior", () => {
+    expect(getLmModelRef(40, "Interior")).toBe("LM40");
+    expect(getLmModelRef(60, "Exterior")).toBe("LM60E");
+    expect(getLmModelRef(100)).toBe("LM100");
+  });
+
+  it("does not format unsupported or technical consultation selections", () => {
+    expect(getLmModelRef(null, "Interior")).toBeNull();
+    expect(getLmModelRef("Consultar dpto. técnico", "Exterior")).toBeNull();
+    expect(getLmModelRef(120, "Interior")).toBeNull();
   });
 });
 

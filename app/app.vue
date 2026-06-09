@@ -11,6 +11,7 @@ import { useVersionedAsset } from "../composables/useVersionedAsset";
 import { useLineCalculations } from "../composables/useLineCalculations";
 import {
   TECHNICAL_CONSULTATION_REQUIRED_MESSAGE,
+  getLmModelRef,
   requiresTechnicalConsultation,
 } from "../utils/lmCatalog";
 
@@ -182,9 +183,7 @@ const addCommonMaterials = (materials, {
   tapaExtrema = 1,
   universalSupports,
 }) => {
-  const lineReference = typeof intensityToInstall === "number"
-    ? `LM${intensityToInstall}${isExteriorEnvironment.value ? "E" : ""}`
-    : null;
+  const lineReference = getLmModelRef(intensityToInstall, formState.work_environment);
   addMaterial(materials, {
     section,
     reference: lineReference,
@@ -255,11 +254,13 @@ const buildCalculatedResultPayload = () => ({
   totalPowerWatts: getPayloadValue(totalPowerWatts.value),
   totalPowerAmps: getPayloadValue(totalPowerAmps.value),
   intensityToInstallAmp: getPayloadValue(intensityToInstallAmp.value),
+  lmModelRef: getPayloadValue(lmModelRef.value),
   voltageDropVolts: getPayloadValue(voltageDropVolts.value),
   voltageDropPercent: getPayloadValue(voltageDropPercent.value),
   voltageDropMessage: voltageDropMessage.value || null,
   lineIncreaseOption: voltageDropMessage.value === "VER OPCIONES 1 Y 2" ? {
     intensityToInstallAmp: intensityToInstallLine.value,
+    lmModelRef: lmModelRefLine.value,
     voltageDropVolts: voltageDropVoltsLine.value,
     voltageDropPercent: voltageDropPercentLine.value,
     voltageDropMessage: voltageDropMessageLine.value || null,
@@ -268,6 +269,7 @@ const buildCalculatedResultPayload = () => ({
     recommendedFeedingType: recommendedFeedingType.value,
     selectedLengthMeters: selectedFeedingLengthMeters.value,
     intensityToInstallAmp: intensityToInstallFeeding.value,
+    lmModelRef: lmModelRefFeeding.value,
     voltageDropPercent: voltageDropPercentIntermedia.value,
     voltageDropPercentDisplay: voltageDropPercentIntermediaDisplay.value,
   } : null,
@@ -517,6 +519,15 @@ const shouldShowRightPanelCalculations = computed(() =>
   ["Interior", "Exterior"].includes(formState.work_environment)
 );
 const isExteriorEnvironment = computed(() => formState.work_environment === "Exterior");
+const lmModelRef = computed(() =>
+  getLmModelRef(intensityToInstallAmp.value, formState.work_environment)
+);
+const lmModelRefLine = computed(() =>
+  getLmModelRef(intensityToInstallLine.value, formState.work_environment)
+);
+const lmModelRefFeeding = computed(() =>
+  getLmModelRef(intensityToInstallFeeding.value, formState.work_environment)
+);
 const supportsReferenceLabel = computed(() => isExteriorEnvironment.value ? "SO4E" : "SO-4");
 const spliceReferenceLabel = computed(() => isExteriorEnvironment.value ? "EMP4E" : "EMP-4");
 const fixedPointReferenceLabel = computed(() => isExteriorEnvironment.value ? "PF-4E" : "PF-4");
@@ -1806,7 +1817,7 @@ const handleReset = async () => {
           >
             <section class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
-                <div class="results-summary-grid grid gap-4 md:grid-cols-3">
+                <div class="results-summary-grid grid gap-4 md:grid-cols-4">
                   <div class="results-summary-item">
                   <label class="label-text text-sm font-semibold" for="totalPowerWatts">
                     Potencia total (watios)
@@ -1829,6 +1840,18 @@ const handleReset = async () => {
                     class="input input-bordered w-full"
                     readonly
                     :value="hasAnyRightPanelInput ? intensityToInstallAmp ?? '' : ''"
+                  />
+                  </div>
+                  <div class="results-summary-item">
+                  <label class="label-text text-sm font-semibold" for="lmModelRef">
+                    Modelo seleccionado
+                  </label>
+                  <input
+                    id="lmModelRef"
+                    type="text"
+                    class="input input-bordered w-full"
+                    readonly
+                    :value="hasAnyRightPanelInput ? lmModelRef ?? '' : ''"
                   />
                   </div>
                   <div class="results-summary-item">
@@ -1993,6 +2016,18 @@ const handleReset = async () => {
                     />
                   </div>
                   <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="lmModelRefLine">
+                      Modelo seleccionado a INSTALAR
+                    </label>
+                    <input
+                      id="lmModelRefLine"
+                      type="text"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="lmModelRefLine ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="voltageDropPercent">
                       % Caída de tensión
                     </label>
@@ -2147,6 +2182,18 @@ const handleReset = async () => {
                       class="input input-bordered w-full"
                       readonly
                       :value="intensityToInstallFeeding ?? ''"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="label-text text-sm font-semibold" for="lmModelRefFeeding">
+                      Modelo seleccionado a INSTALAR
+                    </label>
+                    <input
+                      id="lmModelRefFeeding"
+                      type="text"
+                      class="input input-bordered w-full"
+                      readonly
+                      :value="lmModelRefFeeding ?? ''"
                     />
                   </div>
                   <div class="space-y-2">

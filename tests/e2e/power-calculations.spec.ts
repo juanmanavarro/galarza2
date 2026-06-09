@@ -37,6 +37,7 @@ test.describe("power and intensity inputs", () => {
     await expect(page.locator('input[name="max_simultaneous_power_cv"]')).toHaveValue("");
     await expect(page.locator('input[name="max_simultaneous_power_kw"]')).toHaveValue("");
     await expect(page.locator("#intensityToInstall")).toHaveValue("100");
+    await expect(page.locator("#lmModelRef")).toHaveValue("LM100");
   });
 
   test("uses direct amps in simultaneous mode with two machines", async ({ page }) => {
@@ -47,6 +48,7 @@ test.describe("power and intensity inputs", () => {
     await expect(page.locator('input[name="max_simultaneous_power_cv"]')).toHaveValue("");
     await expect(page.locator('input[name="max_simultaneous_power_kw"]')).toHaveValue("");
     await expect(page.locator("#intensityToInstall")).toHaveValue("140");
+    await expect(page.locator("#lmModelRef")).toHaveValue("LM140");
   });
 
   test("uses direct amps in Por grua mode", async ({ page }) => {
@@ -56,6 +58,7 @@ test.describe("power and intensity inputs", () => {
     await expect(page.locator('input[name="main_lift_cv_1"]')).toHaveValue("");
     await expect(page.locator('input[name="main_lift_kw_1"]')).toHaveValue("");
     await expect(page.locator("#intensityToInstall")).toHaveValue("100");
+    await expect(page.locator("#lmModelRef")).toHaveValue("LM100");
   });
 
   test("does not treat calculated amps from CV as manual amps", async ({ page }) => {
@@ -111,6 +114,7 @@ test.describe("power and intensity inputs", () => {
 
     await expect(page.locator("#totalPowerWatts")).toBeVisible();
     await expect(page.locator("#intensityToInstall")).toHaveValue("60");
+    await expect(page.locator("#lmModelRef")).toHaveValue("LM60E");
     await expect(page.locator("#alimentacionExtremaRef")).toHaveValue("AE-4E");
     await expect(page.getByText("Soportes (SO4E)")).toBeVisible();
     await expect(page.getByText("Empalmes (EMP4E)")).toBeVisible();
@@ -153,6 +157,7 @@ test.describe("power and intensity inputs", () => {
         technicalConsultationRequired: false,
         totalPowerAmps: 40,
         intensityToInstallAmp: 60,
+        lmModelRef: "LM60",
       },
     });
     expect(payload.result.totalPowerWatts).toBe(0);
