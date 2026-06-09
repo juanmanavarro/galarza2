@@ -65,7 +65,7 @@ if (!is_array($result) || ($totalPowerWatts <= 0 && $totalPowerAmps <= 0)) {
   exit;
 }
 
-$to = getenv('MAIL_TO') ?: 'hola@juanmanavar.ro';
+$to = getenv('MAIL_TO') ?: 'configurador@industriasgalarza.com';
 $subject = 'Nuevo envío de formulario';
 
 $lines = [
@@ -86,7 +86,7 @@ foreach ($data as $key => $value) {
 
 $message = implode("\n", $lines);
 $headers = [];
-$headers[] = 'From: no-reply@galarza.local';
+$headers[] = 'From: configurador@industriasgalarza.com';
 $headers[] = 'Reply-To: ' . $email;
 $headers[] = 'Content-Type: text/plain; charset=UTF-8';
 
@@ -109,7 +109,7 @@ $userMessageLines = [
 ];
 $userMessage = implode("\n", $userMessageLines);
 $userHeaders = [];
-$userHeaders[] = 'From: no-reply@galarza.local';
+$userHeaders[] = 'From: configurador@industriasgalarza.com';
 $userHeaders[] = 'Content-Type: text/plain; charset=UTF-8';
 
 $sentUser = mail($email, $userSubject, $userMessage, implode("\r\n", $userHeaders));
