@@ -1,4 +1,6 @@
 export const CONSULT_TECHNICAL_MESSAGE = "Consultar dpto. técnico";
+export const NO_STANDARD_MODEL_MESSAGE =
+  "No hay modelo estándar que cumpla la caída de tensión indicada. Consultar con IGA.";
 export const TECHNICAL_CONSULTATION_REQUIRED_MESSAGE =
   "Esta configuración requiere consulta con el servicio técnico de IGA.";
 export const VOLTAGE_DROP_LIMIT_PERCENT = 3;

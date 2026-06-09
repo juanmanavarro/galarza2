@@ -10,6 +10,7 @@ import { useGruaAccessories } from "../composables/useGruaAccessories";
 import { useVersionedAsset } from "../composables/useVersionedAsset";
 import { useLineCalculations } from "../composables/useLineCalculations";
 import {
+  NO_STANDARD_MODEL_MESSAGE,
   TECHNICAL_CONSULTATION_REQUIRED_MESSAGE,
   getLmModelRef,
   requiresTechnicalConsultation,
@@ -263,7 +264,7 @@ const buildCalculatedResultPayload = () => ({
     lmModelRef: lmModelRefLine.value,
     voltageDropVolts: voltageDropVoltsLine.value,
     voltageDropPercent: voltageDropPercentLine.value,
-    voltageDropMessage: voltageDropMessageLine.value || null,
+    voltageDropMessage: isConsultingLine.value ? NO_STANDARD_MODEL_MESSAGE : voltageDropMessageLine.value || null,
   } : null,
   intermediateFeedingOption: voltageDropMessage.value === "VER OPCIONES 1 Y 2" ? {
     recommendedFeedingType: recommendedFeedingType.value,
@@ -272,6 +273,7 @@ const buildCalculatedResultPayload = () => ({
     lmModelRef: lmModelRefFeeding.value,
     voltageDropPercent: voltageDropPercentIntermedia.value,
     voltageDropPercentDisplay: voltageDropPercentIntermediaDisplay.value,
+    voltageDropMessage: isFeedingOptionUnavailable.value ? NO_STANDARD_MODEL_MESSAGE : null,
   } : null,
 });
 
@@ -294,33 +296,37 @@ const buildMaterialsPayload = () => {
     return materials;
   }
 
-  addCommonMaterials(materials, {
-    section: "opcion_incrementar_intensidad_linea",
-    intensityToInstall: intensityToInstallLine.value,
-    supports: supportsSO4Line.value,
-    empalmes: empalmesEMP4Line.value,
-    alimentacionRef: alimentacionExtremaLine.value,
-    universalSupports: su5001Line.value,
-  });
-  addGruaMaterials(materials, "opcion_incrementar_intensidad_linea", !isConsultingLine.value);
+  if (!isConsultingLine.value) {
+    addCommonMaterials(materials, {
+      section: "opcion_incrementar_intensidad_linea",
+      intensityToInstall: intensityToInstallLine.value,
+      supports: supportsSO4Line.value,
+      empalmes: empalmesEMP4Line.value,
+      alimentacionRef: alimentacionExtremaLine.value,
+      universalSupports: su5001Line.value,
+    });
+    addGruaMaterials(materials, "opcion_incrementar_intensidad_linea");
+  }
 
-  addCommonMaterials(materials, {
-    section: "opcion_alimentacion_intermedia",
-    intensityToInstall: intensityToInstallFeeding.value,
-    supports: supportsSO4Intermedia.value,
-    empalmes: empalmesEMP4Intermedia.value,
-    alimentacionRef: alimentacionInteriorIntermedia.value,
-    puntoFijo: puntoFijoPF4Intermedia.value,
-    tapaExtrema: tapaExtremaTE4Intermedia.value,
-    universalSupports: su5001Intermedia.value,
-  });
-  addMaterial(materials, {
-    section: "opcion_alimentacion_intermedia",
-    reference: alimentacionInteriorIntermedia.value,
-    quantity: alimentacionUnidadesIntermedia.value,
-    description: "Alimentación intermedia",
-  });
-  addGruaMaterials(materials, "opcion_alimentacion_intermedia");
+  if (!isFeedingOptionUnavailable.value) {
+    addCommonMaterials(materials, {
+      section: "opcion_alimentacion_intermedia",
+      intensityToInstall: intensityToInstallFeeding.value,
+      supports: supportsSO4Intermedia.value,
+      empalmes: empalmesEMP4Intermedia.value,
+      alimentacionRef: alimentacionInteriorIntermedia.value,
+      puntoFijo: puntoFijoPF4Intermedia.value,
+      tapaExtrema: tapaExtremaTE4Intermedia.value,
+      universalSupports: su5001Intermedia.value,
+    });
+    addMaterial(materials, {
+      section: "opcion_alimentacion_intermedia",
+      reference: alimentacionInteriorIntermedia.value,
+      quantity: alimentacionUnidadesIntermedia.value,
+      description: "Alimentación intermedia",
+    });
+    addGruaMaterials(materials, "opcion_alimentacion_intermedia");
+  }
 
   return materials;
 };
@@ -484,6 +490,7 @@ const {
   voltageDropPercentIntermedia,
   voltageDropPercentIntermediaDisplay,
   intensityToInstallFeeding,
+  isConsultingFeeding,
   supportsSO4Intermedia,
   empalmesEMP4Intermedia,
   alimentacionUnidadesIntermedia,
@@ -527,6 +534,9 @@ const lmModelRefLine = computed(() =>
 );
 const lmModelRefFeeding = computed(() =>
   getLmModelRef(intensityToInstallFeeding.value, formState.work_environment)
+);
+const isFeedingOptionUnavailable = computed(() =>
+  !recommendedFeedingType.value || isConsultingFeeding.value
 );
 const supportsReferenceLabel = computed(() => isExteriorEnvironment.value ? "SO4E" : "SO-4");
 const spliceReferenceLabel = computed(() => isExteriorEnvironment.value ? "EMP4E" : "EMP-4");
@@ -1942,6 +1952,9 @@ const handleReset = async () => {
                 <span class="text-sm">{{ isLineCardOpen ? "Ocultar" : "Mostrar" }}</span>
               </button>
               <div v-show="isLineCardOpen" class="card-body px-4 pb-4 pt-2">
+                <p v-if="isConsultingLine" class="text-sm font-semibold text-warning">
+                  {{ NO_STANDARD_MODEL_MESSAGE }}
+                </p>
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="intensityToInstallLine">
@@ -2111,6 +2124,9 @@ const handleReset = async () => {
                 <span class="text-sm">{{ isFeedingCardOpen ? "Ocultar" : "Mostrar" }}</span>
               </button>
               <div v-show="isFeedingCardOpen" class="card-body px-4 pb-4 pt-2">
+                <p v-if="isFeedingOptionUnavailable" class="text-sm font-semibold text-warning">
+                  {{ NO_STANDARD_MODEL_MESSAGE }}
+                </p>
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="intensityToInstallFeeding">
@@ -2121,7 +2137,7 @@ const handleReset = async () => {
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="intensityToInstallFeeding ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : intensityToInstallFeeding ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2133,7 +2149,7 @@ const handleReset = async () => {
                       type="text"
                       class="input input-bordered w-full"
                       readonly
-                      :value="lmModelRefFeeding ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : lmModelRefFeeding ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2145,7 +2161,7 @@ const handleReset = async () => {
                       type="text"
                       class="input input-bordered w-full"
                       readonly
-                      :value="voltageDropPercentIntermediaDisplay"
+                      :value="isFeedingOptionUnavailable ? '' : voltageDropPercentIntermediaDisplay"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2157,7 +2173,7 @@ const handleReset = async () => {
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="supportsSO4Intermedia ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : supportsSO4Intermedia ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2169,7 +2185,7 @@ const handleReset = async () => {
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="empalmesEMP4Intermedia ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : empalmesEMP4Intermedia ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2181,7 +2197,7 @@ const handleReset = async () => {
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="alimentacionUnidadesIntermedia ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : alimentacionUnidadesIntermedia ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2193,14 +2209,19 @@ const handleReset = async () => {
                       type="text"
                       class="input input-bordered w-full"
                       readonly
-                      :value="alimentacionInteriorIntermedia ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : alimentacionInteriorIntermedia ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="alimentacion160200Intermedia">
                       Alimentación para 160-200 A
                     </label>
-                    <select id="alimentacion160200Intermedia" class="select select-bordered w-full">
+                    <select
+                      id="alimentacion160200Intermedia"
+                      class="select select-bordered w-full"
+                      :value="isFeedingOptionUnavailable ? '' : undefined"
+                      :disabled="isFeedingOptionUnavailable"
+                    >
                     <option value=""></option>
                     <option v-for="option in feedingCableOptions" :key="option" :value="option">
                       {{ option }}
@@ -2216,7 +2237,7 @@ const handleReset = async () => {
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="puntoFijoPF4Intermedia ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : puntoFijoPF4Intermedia ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2228,7 +2249,7 @@ const handleReset = async () => {
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="tapaExtremaTE4Intermedia ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : tapaExtremaTE4Intermedia ?? ''"
                     />
                   </div>
                   <div class="space-y-2">
@@ -2240,7 +2261,7 @@ const handleReset = async () => {
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="su5001Intermedia ?? ''"
+                      :value="isFeedingOptionUnavailable ? '' : su5001Intermedia ?? ''"
                     />
                   </div>
                 </div>
@@ -2254,7 +2275,7 @@ const handleReset = async () => {
                           type="text"
                           class="input input-bordered w-full"
                           readonly
-                          :value="tomacorrientesByGrua[index - 1] ?? ''"
+                          :value="isFeedingOptionUnavailable ? '' : tomacorrientesByGrua[index - 1] ?? ''"
                         />
                       </div>
                       <div class="space-y-2">
@@ -2263,7 +2284,7 @@ const handleReset = async () => {
                           type="text"
                           class="input input-bordered w-full"
                           readonly
-                          :value="brazoArrastreByGrua[index - 1] ?? ''"
+                          :value="isFeedingOptionUnavailable ? '' : brazoArrastreByGrua[index - 1] ?? ''"
                         />
                       </div>
                     </div>

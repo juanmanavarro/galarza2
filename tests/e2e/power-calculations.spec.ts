@@ -135,6 +135,53 @@ test.describe("power and intensity inputs", () => {
     await expect(materialsTable).toContainText("BA-70E");
   });
 
+  test("selects a superior LM model for central feeding alternative after voltage drop failure", async ({ page }) => {
+    await page.locator('input[name="total_distance"]').fill("160");
+    await page.locator('input[name="feeding_point_position"][value="extreme"]').check();
+    await page.locator('input[name="power_mode"][value="simultanea"]').check();
+    await page.locator('input[name="max_simultaneous_power_amp"]').fill("80");
+
+    await expect(page.getByText("VER OPCIONES 1 Y 2")).toBeVisible();
+    await page.getByRole("button", { name: /2\. Alimentación intermedia/ }).click();
+
+    await expect(page.getByRole("heading", { name: "2. Alimentación intermedia: ALIMENTACIÓN CENTRAL = L/2" })).toBeVisible();
+    await expect(page.locator("#intensityToInstallFeeding")).toHaveValue("140");
+    await expect(page.locator("#lmModelRefFeeding")).toHaveValue("LM140");
+    await expect(page.locator("#voltageDropPercentIntermedia")).toHaveValue("2.87");
+  });
+
+  test("selects a superior LM model for L/6 feeding alternative after central feeding failure", async ({ page }) => {
+    await page.locator('input[name="total_distance"]').fill("270");
+    await page.locator('input[name="feeding_point_position"][value="central"]').check();
+    await page.locator('input[name="power_mode"][value="simultanea"]').check();
+    await page.locator('input[name="max_simultaneous_power_amp"]').fill("150");
+
+    await expect(page.getByText("VER OPCIONES 1 Y 2")).toBeVisible();
+    await page.getByRole("button", { name: /2\. Alimentación intermedia/ }).click();
+
+    await expect(page.getByRole("heading", { name: "2. Alimentación intermedia: ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6" })).toBeVisible();
+    await expect(page.locator("#intensityToInstallFeeding")).toHaveValue("160");
+    await expect(page.locator("#lmModelRefFeeding")).toHaveValue("LM160");
+    await expect(page.locator("#voltageDropPercentIntermedia")).toHaveValue("2.58");
+  });
+
+  test("shows IGA consultation message when no standard LM model meets voltage drop", async ({ page }) => {
+    await page.locator('input[name="total_distance"]').fill("279");
+    await page.locator('input[name="feeding_point_position"][value="extreme"]').check();
+    await page.locator('input[name="power_mode"][value="simultanea"]').check();
+    await page.locator('input[name="max_simultaneous_power_amp"]').fill("200");
+
+    await expect(page.getByText("VER OPCIONES 1 Y 2")).toBeVisible();
+    await page.getByRole("button", { name: /1\. Incrementar intensidad/ }).click();
+    await page.getByRole("button", { name: /2\. Alimentación intermedia/ }).click();
+
+    await expect(
+      page.getByText("No hay modelo estándar que cumpla la caída de tensión indicada. Consultar con IGA.")
+    ).toHaveCount(2);
+    await expect(page.locator("#intensityToInstallLine")).toHaveValue("Consultar dpto. técnico");
+    await expect(page.locator("#intensityToInstallFeeding")).toHaveValue("");
+  });
+
   test("sends configuration with calculated result and materials breakdown", async ({ page }) => {
     await page.route("**/mail.php", async (route) => {
       await route.fulfill({ status: 200, body: "ok" });

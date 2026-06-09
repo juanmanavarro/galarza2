@@ -13,7 +13,6 @@ import {
   getSupportsSO4Count,
   getVoltageDropOfferMessage,
   isVoltageDropAccepted,
-  selectFeedingIntensityToInstall,
 } from "../utils/lmCatalog";
 
 type FormState = {
@@ -29,33 +28,25 @@ export const useLineCalculations = (
   formState: FormState,
   totalPowerAmps: { value: number }
 ) => {
-  const effectiveVoltageDropLength = computed(() =>
-    getEffectiveVoltageDropLength({
-      totalDistance: Number(formState.total_distance),
-      feedingPointPosition: formState.feeding_point_position,
-      feedingPointPositionDistance: formState.feeding_point_position_distance,
-    })
-  );
-
-  const intensityToInstallLine = computed(() => {
+  const selectAcceptedIntensityForLength = (lengthMeters: number | null) => {
     const intensityNominal = Number(totalPowerAmps.value);
     if (!Number.isFinite(intensityNominal)) {
       return null;
     }
-    const lengthMeters = Number(effectiveVoltageDropLength.value);
     const nominalVoltage = Number(formState.voltage);
-    if (!Number.isFinite(lengthMeters) || lengthMeters <= 0) {
+    if (!Number.isFinite(lengthMeters) || Number(lengthMeters) <= 0) {
       return null;
     }
     if (!Number.isFinite(nominalVoltage) || nominalVoltage === 0) {
       return null;
     }
+
     for (const option of INTENSITY_OPTIONS) {
       const impedance = IMPEDANCE_BY_INTENSITY_OHM_PER_M[option];
       if (!Number.isFinite(impedance)) {
         continue;
       }
-      const dropVolts = Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
+      const dropVolts = Math.sqrt(3) * intensityNominal * Number(lengthMeters) * impedance;
       const dropPercent = (dropVolts / nominalVoltage) * 100;
       if (
         intensityNominal < option &&
@@ -65,7 +56,19 @@ export const useLineCalculations = (
       }
     }
     return CONSULT_TECHNICAL_MESSAGE;
-  });
+  };
+
+  const effectiveVoltageDropLength = computed(() =>
+    getEffectiveVoltageDropLength({
+      totalDistance: Number(formState.total_distance),
+      feedingPointPosition: formState.feeding_point_position,
+      feedingPointPositionDistance: formState.feeding_point_position_distance,
+    })
+  );
+
+  const intensityToInstallLine = computed(() =>
+    selectAcceptedIntensityForLength(effectiveVoltageDropLength.value)
+  );
 
   const isConsultingLine = computed(() => intensityToInstallLine.value === CONSULT_TECHNICAL_MESSAGE);
 
@@ -84,40 +87,48 @@ export const useLineCalculations = (
     })
   );
 
-  const intensityToInstallFeeding = computed(() =>
-    selectFeedingIntensityToInstall(Number(totalPowerAmps.value))
-  );
-
-  const getVoltageDropVoltsForLength = (lengthMeters: number | null) =>
+  const getVoltageDropVoltsForLength = (
+    lengthMeters: number | null,
+    intensityToInstall: number | string | null
+  ) =>
     calculateVoltageDropVolts({
       intensityNominal: Number(totalPowerAmps.value),
       lengthMeters: Number(lengthMeters),
-      intensityToInstall: intensityToInstallFeeding.value,
+      intensityToInstall,
     });
 
-  const getVoltageDropPercentForLength = (lengthMeters: number | null) =>
+  const getVoltageDropPercentForLength = (
+    lengthMeters: number | null,
+    intensityToInstall: number | string | null
+  ) =>
     calculateVoltageDropPercent({
-      dropVolts: getVoltageDropVoltsForLength(lengthMeters),
+      dropVolts: getVoltageDropVoltsForLength(lengthMeters, intensityToInstall),
       nominalVoltage: Number(formState.voltage),
     });
 
   const voltageDropPercentL2 = computed(() =>
-    getVoltageDropPercentForLength(Number(formState.total_distance) / 2)
+    getVoltageDropPercentForLength(
+      Number(formState.total_distance) / 2,
+      selectAcceptedIntensityForLength(Number(formState.total_distance) / 2)
+    )
   );
   const voltageDropPercentL6 = computed(() =>
-    getVoltageDropPercentForLength(Number(formState.total_distance) / 6)
+    getVoltageDropPercentForLength(
+      Number(formState.total_distance) / 6,
+      selectAcceptedIntensityForLength(Number(formState.total_distance) / 6)
+    )
   );
 
   const recommendedFeedingType = computed(() => {
     if (formState.feeding_point_position === "extreme") {
-      const dropL2 = voltageDropPercentL2.value;
-      return isVoltageDropAccepted(dropL2, Number(formState.max_permissible_voltage_drop))
+      const intensityL2 = selectAcceptedIntensityForLength(Number(formState.total_distance) / 2);
+      return intensityL2 !== null && intensityL2 !== CONSULT_TECHNICAL_MESSAGE
         ? "ALIMENTACIÓN CENTRAL = L/2"
         : null;
     }
     if (formState.feeding_point_position === "central") {
-      const dropL6 = voltageDropPercentL6.value;
-      return isVoltageDropAccepted(dropL6, Number(formState.max_permissible_voltage_drop))
+      const intensityL6 = selectAcceptedIntensityForLength(Number(formState.total_distance) / 6);
+      return intensityL6 !== null && intensityL6 !== CONSULT_TECHNICAL_MESSAGE
         ? "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6"
         : null;
     }
@@ -141,10 +152,21 @@ export const useLineCalculations = (
 
   const voltageDropPercentIntermedia = computed(() =>
     calculateVoltageDropPercent({
-      dropVolts: getVoltageDropVoltsForLength(selectedFeedingLengthMeters.value),
+      dropVolts: getVoltageDropVoltsForLength(
+        selectedFeedingLengthMeters.value,
+        intensityToInstallFeeding.value
+      ),
       nominalVoltage: Number(formState.voltage),
     })
   );
+
+  const intensityToInstallFeeding = computed(() =>
+    recommendedFeedingType.value
+      ? selectAcceptedIntensityForLength(selectedFeedingLengthMeters.value)
+      : null
+  );
+
+  const isConsultingFeeding = computed(() => intensityToInstallFeeding.value === CONSULT_TECHNICAL_MESSAGE);
 
   const voltageDropPercentIntermediaDisplay = computed(() => {
     const value = voltageDropPercentIntermedia.value;
@@ -255,6 +277,7 @@ export const useLineCalculations = (
     voltageDropPercentIntermedia,
     voltageDropPercentIntermediaDisplay,
     intensityToInstallFeeding,
+    isConsultingFeeding,
     supportsSO4Intermedia,
     empalmesEMP4Intermedia,
     alimentacionUnidadesIntermedia,

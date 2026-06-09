@@ -79,6 +79,17 @@ describe("voltage drop feeding alternatives", () => {
     expect(selectedFeedingLengthMeters.value).toBe(40);
   });
 
+  it("selects the first superior LM model that meets central feeding voltage drop", () => {
+    const { recommendedFeedingType, intensityToInstallFeeding, voltageDropPercentIntermedia } = useLineCalculations(
+      createFormState({ total_distance: 160, feeding_point_position: "extreme" }),
+      { value: 80 }
+    );
+
+    expect(recommendedFeedingType.value).toBe("ALIMENTACIÓN CENTRAL = L/2");
+    expect(intensityToInstallFeeding.value).toBe(200);
+    expect(voltageDropPercentIntermedia.value).toBeLessThan(3);
+  });
+
   it("recommends L/6 only after a central-feeding failure", () => {
     const { recommendedFeedingType, selectedFeedingLengthMeters } = useLineCalculations(
       createFormState({ total_distance: 260, feeding_point_position: "central" }),
@@ -87,6 +98,28 @@ describe("voltage drop feeding alternatives", () => {
 
     expect(recommendedFeedingType.value).toBe("ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6");
     expect(selectedFeedingLengthMeters.value).toBeCloseTo(260 / 6);
+  });
+
+  it("selects the first superior LM model that meets L/6 feeding voltage drop", () => {
+    const { recommendedFeedingType, intensityToInstallFeeding, voltageDropPercentIntermedia } = useLineCalculations(
+      createFormState({ total_distance: 270, feeding_point_position: "central" }),
+      { value: 120 }
+    );
+
+    expect(recommendedFeedingType.value).toBe("ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6");
+    expect(intensityToInstallFeeding.value).toBe(160);
+    expect(voltageDropPercentIntermedia.value).toBeLessThan(3);
+  });
+
+  it("does not recommend a feeding alternative when no standard LM model meets voltage drop", () => {
+    const { recommendedFeedingType, intensityToInstallFeeding, voltageDropPercentIntermedia } = useLineCalculations(
+      createFormState({ total_distance: 500, feeding_point_position: "extreme" }),
+      { value: 199 }
+    );
+
+    expect(recommendedFeedingType.value).toBeNull();
+    expect(intensityToInstallFeeding.value).toBeNull();
+    expect(voltageDropPercentIntermedia.value).toBeNull();
   });
 
   it("does not recommend L/6 as a normal M-meter feeding alternative", () => {
