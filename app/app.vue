@@ -480,9 +480,9 @@ const {
   sendForm,
   sendModalOptions,
   isSending,
-  openSendModal,
+  openSendModal: openSendModalBase,
   closeSendModal,
-  handleSendSubmit,
+  handleSendSubmit: handleSendSubmitBase,
 } = useSendModal({
   modalId: "sendModal",
   backdropClasses: "overlay-backdrop fixed inset-0 bg-black/40",
@@ -623,6 +623,16 @@ const hasAnyRightPanelInput = computed(() => {
     Number(formState.max_simultaneous_power_amp) > 0;
   return hasGruaPower || hasMaxPower;
 });
+const canSendConfiguration = computed(() => isRequiredFormComplete.value && hasAnyRightPanelInput.value);
+const sendDisabledReason = computed(() => {
+  if (!isRequiredFormComplete.value) {
+    return "Faltan campos obligatorios por definir";
+  }
+  if (!hasAnyRightPanelInput.value) {
+    return "Introduce datos de potencia para calcular resultados antes de enviar";
+  }
+  return "";
+});
 const calculatedResult = computed(() => buildCalculatedResultPayload());
 const materialsBreakdown = computed(() => buildMaterialsPayload());
 
@@ -636,6 +646,23 @@ const showToast = (message, variant = "success") => {
   toastTimeout = setTimeout(() => {
     isToastVisible.value = false;
   }, 3000);
+};
+
+const openSendModal = () => {
+  if (!canSendConfiguration.value) {
+    showToast(sendDisabledReason.value, "error");
+    return;
+  }
+  openSendModalBase();
+};
+
+const handleSendSubmit = (event) => {
+  if (!canSendConfiguration.value) {
+    event?.preventDefault();
+    showToast(sendDisabledReason.value, "error");
+    return;
+  }
+  handleSendSubmitBase(event);
 };
 
 const resetFormState = async () => {
@@ -2369,15 +2396,15 @@ const handleReset = async () => {
       <span class="text-xs text-base-content/70">INDUSTRIAS GALARZA, S.A. © {{ currentYear }}</span>
       <div class="flex items-center gap-3">
         <div class="relative group">
-          <button type="button" class="btn btn-primary" :disabled="!isRequiredFormComplete" @click="openSendModal">
+          <button type="button" class="btn btn-primary" :disabled="!canSendConfiguration" @click="openSendModal">
             Enviar
           </button>
           <div
-            v-if="!isRequiredFormComplete"
+            v-if="sendDisabledReason"
             role="tooltip"
             class="pointer-events-none absolute bottom-full left-1/2 mb-2 w-max max-w-xs -translate-x-1/2 rounded bg-base-300 px-3 py-2 text-xs text-base-content shadow opacity-0 transition group-hover:opacity-100"
           >
-            Faltan campos obligatorios por definir
+            {{ sendDisabledReason }}
           </div>
         </div>
         <button v-if="isDirty" type="button" class="btn btn-error" @click="handleReset">
