@@ -558,6 +558,8 @@ const hasAnyRightPanelInput = computed(() => {
     Number(formState.max_simultaneous_power_amp) > 0;
   return hasGruaPower || hasMaxPower;
 });
+const calculatedResult = computed(() => buildCalculatedResultPayload());
+const materialsBreakdown = computed(() => buildMaterialsPayload());
 
 const showToast = (message, variant = "success") => {
   toastMessage.value = message;
@@ -1817,172 +1819,110 @@ const handleReset = async () => {
           >
             <section class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
-                <div class="results-summary-grid grid gap-4 md:grid-cols-4">
+                <div class="results-summary-grid grid gap-4 md:grid-cols-3">
                   <div class="results-summary-item">
-                  <label class="label-text text-sm font-semibold" for="totalPowerWatts">
-                    Potencia total (watios)
-                  </label>
-                  <input
-                    id="totalPowerWatts"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="hasAnyRightPanelInput ? totalPowerWatts : ''"
-                  />
-                  </div>
-                  <div class="results-summary-item">
-                  <label class="label-text text-sm font-semibold" for="intensityToInstall">
-                    Intensidad a instalar (Amperios)
-                  </label>
-                  <input
-                    id="intensityToInstall"
-                    type="text"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="hasAnyRightPanelInput ? intensityToInstallAmp ?? '' : ''"
-                  />
-                  </div>
-                  <div class="results-summary-item">
-                  <label class="label-text text-sm font-semibold" for="lmModelRef">
-                    Modelo seleccionado
-                  </label>
-                  <input
-                    id="lmModelRef"
-                    type="text"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="hasAnyRightPanelInput ? lmModelRef ?? '' : ''"
-                  />
-                  </div>
-                  <div class="results-summary-item">
-                  <label class="label-text text-sm font-semibold" for="voltageDropPercent">
-                    % Caída de tensión
-                  </label>
-                  <input
-                    id="voltageDropPercent"
-                    type="number"
-                    class="input input-bordered w-full"
-                    readonly
-                    :value="hasAnyRightPanelInput ? voltageDropPercent ?? '' : ''"
-                  />
-                  <p v-if="voltageDropMessage" class="text-xs text-base-content/70">
-                    {{ voltageDropMessage }}
-                  </p>
-                  </div>
-                </div>
-                <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'" class="mt-2 grid gap-4 md:grid-cols-2">
-                  <div class="space-y-2">
-                    <label class="label-text text-sm font-semibold" for="supportsSO4">
-                      Soportes ({{ supportsReferenceLabel }})
+                    <label class="label-text text-sm font-semibold" for="lmModelRef">
+                      Modelo seleccionado
                     </label>
                     <input
-                      id="supportsSO4"
-                      type="number"
-                      class="input input-bordered w-full"
-                      readonly
-                      :value="hasAnyRightPanelInput ? supportsSO4 ?? '' : ''"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="label-text text-sm font-semibold" for="empalmesEMP4">
-                      Empalmes ({{ spliceReferenceLabel }})
-                    </label>
-                    <input
-                      id="empalmesEMP4"
-                      type="number"
-                      class="input input-bordered w-full"
-                      readonly
-                      :value="hasAnyRightPanelInput ? empalmesEMP4 ?? '' : ''"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="label-text text-sm font-semibold" for="alimentacionExtremaRef">
-                      Alimentación extrema (desde 40 A hasta 140 A)
-                    </label>
-                    <input
-                      id="alimentacionExtremaRef"
+                      id="lmModelRef"
                       type="text"
                       class="input input-bordered w-full"
                       readonly
-                      :value="hasAnyRightPanelInput ? alimentacionExtremaRef ?? '' : ''"
+                      :value="calculatedResult.lmModelRef ?? ''"
                     />
+                    <p class="text-xs text-base-content/60">Referencia LM</p>
                   </div>
-                  <div class="space-y-2">
-                    <label class="label-text text-sm font-semibold" for="alimentacion160200">
-                      Alimentación para 160-200 A
-                    </label>
-                    <select
-                      id="alimentacion160200"
-                      class="select select-bordered w-full"
-                      :disabled="!hasAnyRightPanelInput"
-                    >
-                      <option value="-">-</option>
-                      <option v-for="option in feedingCableOptions" :key="option" :value="option">
-                        {{ option }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="space-y-2">
-                    <label class="label-text text-sm font-semibold" for="puntoFijoPF4">
-                      Punto Fijo ({{ fixedPointReferenceLabel }})
+                  <div class="results-summary-item">
+                    <label class="label-text text-sm font-semibold" for="totalPowerWatts">
+                      Potencia simultánea
                     </label>
                     <input
-                      id="puntoFijoPF4"
+                      id="totalPowerWatts"
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="hasAnyRightPanelInput ? 1 : ''"
+                      :value="calculatedResult.totalPowerWatts ?? ''"
                     />
+                    <p class="text-xs text-base-content/60">Watios</p>
                   </div>
-                  <div class="space-y-2">
-                    <label class="label-text text-sm font-semibold" for="tapaExtremaTE4">
-                      Tapa Extrema ({{ endCapReferenceLabel }})
+                  <div class="results-summary-item">
+                    <label class="label-text text-sm font-semibold" for="totalPowerAmps">
+                      Intensidad calculada
                     </label>
                     <input
-                      id="tapaExtremaTE4"
+                      id="totalPowerAmps"
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="hasAnyRightPanelInput ? 1 : ''"
+                      :value="calculatedResult.totalPowerAmps ?? ''"
                     />
+                    <input
+                      id="intensityToInstall"
+                      type="hidden"
+                      :value="calculatedResult.intensityToInstallAmp ?? ''"
+                    />
+                    <p class="text-xs text-base-content/60">Amperios</p>
                   </div>
-                  <div class="space-y-2">
-                    <label class="label-text text-sm font-semibold" for="su5001">
-                      {{ universalSupportReferenceLabel }}
+                  <div class="results-summary-item">
+                    <label class="label-text text-sm font-semibold" for="voltageDropVolts">
+                      Caída en voltios
                     </label>
                     <input
-                      id="su5001"
+                      id="voltageDropVolts"
                       type="number"
                       class="input input-bordered w-full"
                       readonly
-                      :value="hasAnyRightPanelInput ? su5001 ?? '' : ''"
+                      :value="calculatedResult.voltageDropVolts ?? ''"
                     />
+                    <p class="text-xs text-base-content/60">Voltios</p>
                   </div>
-                </div>
-                <div class="mt-4 space-y-4">
-                  <div v-for="index in gruasCount" :key="`grua-resumen-${index}`" class="grua-summary-item">
-                    <span class="label-text text-sm font-semibold">Grua {{ index }}</span>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                      <div class="space-y-2">
-                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Tomacorrientes</span>
+                  <div class="results-summary-item-wide md:col-span-2">
+                    <div class="grid gap-3 md:grid-cols-2 md:items-center">
+                      <div class="results-summary-item">
+                        <label class="label-text text-sm font-semibold" for="voltageDropPercent">
+                          Caída en porcentaje
+                        </label>
                         <input
-                          type="text"
+                          id="voltageDropPercent"
+                          type="number"
                           class="input input-bordered w-full"
                           readonly
-                          :value="hasAnyRightPanelInput ? tomacorrientesByGrua[index - 1] ?? '' : ''"
+                          :value="calculatedResult.voltageDropPercent ?? ''"
                         />
+                        <p class="text-xs text-base-content/60">%</p>
                       </div>
-                      <div class="space-y-2">
-                        <span v-if="gruasCount === 1 || index === 1" class="label-text">Brazo arrastre</span>
-                        <input
-                          type="text"
-                          class="input input-bordered w-full"
-                          readonly
-                          :value="hasAnyRightPanelInput ? brazoArrastreByGrua[index - 1] ?? '' : ''"
-                        />
-                      </div>
+                      <p v-if="voltageDropMessage" class="text-xs text-base-content/70">
+                        {{ voltageDropMessage }}
+                      </p>
                     </div>
                   </div>
+                </div>
+                <div class="mt-6">
+                  <h2 class="text-base font-semibold">Desglose de materiales</h2>
+                  <div v-if="materialsBreakdown.length" class="mt-3 overflow-x-auto rounded-md border border-base-300">
+                    <table class="table table-sm w-full" aria-label="Desglose de materiales">
+                      <thead>
+                        <tr>
+                          <th class="text-left">Referencia</th>
+                          <th class="text-right">Cantidad</th>
+                          <th class="text-left">Unidad</th>
+                          <th class="text-left">Descripción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="material in materialsBreakdown" :key="`${material.section}-${material.reference}-${material.description}`">
+                          <td class="font-medium">{{ material.reference }}</td>
+                          <td class="text-right">{{ material.quantity }}</td>
+                          <td>{{ material.unit }}</td>
+                          <td>{{ material.description }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p v-else class="mt-3 text-sm text-base-content/60">
+                    Introduce potencia o intensidad para generar el desglose de materiales.
+                  </p>
                 </div>
               <pre
                 class="mt-3 hidden flex-1 overflow-y-auto rounded-md bg-base-100 p-3 text-xs text-base-content"
@@ -2482,7 +2422,8 @@ const handleReset = async () => {
 
 .results-summary-item {
   display: grid;
-  grid-template-rows: minmax(2.75rem, auto) 2.25rem auto;
+  grid-template-rows: auto 2.25rem auto;
+  row-gap: 0.125rem;
   align-items: start;
 }
 

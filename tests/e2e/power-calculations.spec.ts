@@ -114,15 +114,25 @@ test.describe("power and intensity inputs", () => {
 
     await expect(page.locator("#totalPowerWatts")).toBeVisible();
     await expect(page.locator("#intensityToInstall")).toHaveValue("60");
+    await expect(page.locator("#totalPowerAmps")).toHaveValue("40");
     await expect(page.locator("#lmModelRef")).toHaveValue("LM60E");
-    await expect(page.locator("#alimentacionExtremaRef")).toHaveValue("AE-4E");
-    await expect(page.getByText("Soportes (SO4E)")).toBeVisible();
-    await expect(page.getByText("Empalmes (EMP4E)")).toBeVisible();
-    await expect(page.getByText("Punto Fijo (PF-4E)")).toBeVisible();
-    await expect(page.getByText("Tapa Extrema (TE-4E)")).toBeVisible();
-    await expect(page.getByText("SU-500-1-INOX")).toBeVisible();
-    await expect(page.locator(".grua-summary-item").first().locator("input").first()).toHaveValue("TO-4x70AE");
-    await expect(page.locator(".grua-summary-item").first().locator("input").nth(1)).toHaveValue("BA-70E");
+    await expect(page.locator("#voltageDropVolts")).not.toHaveValue("");
+    await expect(page.locator("#voltageDropPercent")).not.toHaveValue("");
+
+    const materialsTable = page.getByRole("table", { name: "Desglose de materiales" });
+    await expect(materialsTable.getByRole("columnheader", { name: "Referencia" })).toBeVisible();
+    await expect(materialsTable.getByRole("columnheader", { name: "Cantidad" })).toBeVisible();
+    await expect(materialsTable.getByRole("columnheader", { name: "Unidad" })).toBeVisible();
+    await expect(materialsTable.getByRole("columnheader", { name: "Descripción" })).toBeVisible();
+    await expect(materialsTable).toContainText("LM60E");
+    await expect(materialsTable).toContainText("SO4E");
+    await expect(materialsTable).toContainText("EMP4E");
+    await expect(materialsTable).toContainText("AE-4E");
+    await expect(materialsTable).toContainText("PF-4E");
+    await expect(materialsTable).toContainText("TE-4E");
+    await expect(materialsTable).toContainText("SU-500-1-INOX");
+    await expect(materialsTable).toContainText("TO-4x70AE");
+    await expect(materialsTable).toContainText("BA-70E");
   });
 
   test("sends configuration with calculated result and materials breakdown", async ({ page }) => {
