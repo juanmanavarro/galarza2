@@ -11,6 +11,7 @@ import {
 type FormState = {
   total_distance: number | null;
   voltage: number | null;
+  max_permissible_voltage_drop: number | null;
   feeding_point_position: string;
   feeding_point_position_distance: number | null;
 };
@@ -42,7 +43,11 @@ export const useVoltageDrop = (
     })
   );
   const voltageDropMessage = computed(() =>
-    getVoltageDropOfferMessage(voltageDropPercent.value, "VER OPCIONES 1 Y 2")
+    getVoltageDropOfferMessage(
+      voltageDropPercent.value,
+      "VER OPCIONES 1 Y 2",
+      Number(formState.max_permissible_voltage_drop)
+    )
   );
 
   return {

@@ -10,6 +10,7 @@ import {
   getIntermediateFeedingRef,
   getLmModelRef,
   getSupportsSO4Count,
+  getVoltageDropOfferMessage,
   isVoltageDropAccepted,
   requiresTechnicalConsultation,
   selectIntensityToInstall,
@@ -96,6 +97,24 @@ describe("voltage drop coefficients", () => {
     expect(rejected).toBe(3);
     expect(isVoltageDropAccepted(accepted)).toBe(true);
     expect(isVoltageDropAccepted(rejected)).toBe(false);
+  });
+
+  it("uses a custom maximum voltage drop limit when classifying percentages", () => {
+    expect(isVoltageDropAccepted(3.5, 4)).toBe(true);
+    expect(isVoltageDropAccepted(4, 4)).toBe(false);
+    expect(getVoltageDropOfferMessage(3.5, "VER OPCIONES", 4)).toBe(
+      "SE PUEDE OFERTAR ESTA LÍNEA (<4%)"
+    );
+    expect(getVoltageDropOfferMessage(4, "VER OPCIONES", 4)).toBe("VER OPCIONES");
+  });
+
+  it("falls back to 3 percent when the custom maximum voltage drop is empty or invalid", () => {
+    expect(isVoltageDropAccepted(2.9, null)).toBe(true);
+    expect(isVoltageDropAccepted(3, null)).toBe(false);
+    expect(isVoltageDropAccepted(3.5, 0)).toBe(false);
+    expect(getVoltageDropOfferMessage(2.9, "VER OPCIONES", null)).toBe(
+      "SE PUEDE OFERTAR ESTA LÍNEA (<3%)"
+    );
   });
 });
 

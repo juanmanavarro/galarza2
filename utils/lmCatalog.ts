@@ -130,17 +130,29 @@ export const calculateVoltageDropPercent = ({
   return ((dropVolts as number) / nominalVoltage) * 100;
 };
 
-export const getVoltageDropOfferMessage = (dropPercent: number | null, fallback = "VER OPCIONES") => {
+export const getVoltageDropLimitPercent = (limitPercent?: number | null) => {
+  if (!Number.isFinite(limitPercent) || Number(limitPercent) <= 0) {
+    return VOLTAGE_DROP_LIMIT_PERCENT;
+  }
+  return Number(limitPercent);
+};
+
+export const getVoltageDropOfferMessage = (
+  dropPercent: number | null,
+  fallback = "VER OPCIONES",
+  limitPercent?: number | null
+) => {
   if (!Number.isFinite(dropPercent)) {
     return null;
   }
-  return (dropPercent as number) < VOLTAGE_DROP_LIMIT_PERCENT
-    ? "SE PUEDE OFERTAR ESTA LÍNEA (<3%)"
+  const voltageDropLimitPercent = getVoltageDropLimitPercent(limitPercent);
+  return (dropPercent as number) < voltageDropLimitPercent
+    ? `SE PUEDE OFERTAR ESTA LÍNEA (<${voltageDropLimitPercent}%)`
     : fallback;
 };
 
-export const isVoltageDropAccepted = (dropPercent: number | null) =>
-  Number.isFinite(dropPercent) && (dropPercent as number) < VOLTAGE_DROP_LIMIT_PERCENT;
+export const isVoltageDropAccepted = (dropPercent: number | null, limitPercent?: number | null) =>
+  Number.isFinite(dropPercent) && (dropPercent as number) < getVoltageDropLimitPercent(limitPercent);
 
 export const requiresTechnicalConsultation = ({
   totalDistance,

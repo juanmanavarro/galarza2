@@ -19,6 +19,7 @@ import {
 type FormState = {
   total_distance: number | null;
   voltage: number | null;
+  max_permissible_voltage_drop: number | null;
   feeding_point_position: string;
   feeding_point_position_distance: number | null;
   work_environment: string;
@@ -56,7 +57,10 @@ export const useLineCalculations = (
       }
       const dropVolts = Math.sqrt(3) * intensityNominal * lengthMeters * impedance;
       const dropPercent = (dropVolts / nominalVoltage) * 100;
-      if (intensityNominal < option && isVoltageDropAccepted(dropPercent)) {
+      if (
+        intensityNominal < option &&
+        isVoltageDropAccepted(dropPercent, Number(formState.max_permissible_voltage_drop))
+      ) {
         return option;
       }
     }
@@ -107,11 +111,15 @@ export const useLineCalculations = (
   const recommendedFeedingType = computed(() => {
     if (formState.feeding_point_position === "extreme") {
       const dropL2 = voltageDropPercentL2.value;
-      return isVoltageDropAccepted(dropL2) ? "ALIMENTACIÓN CENTRAL = L/2" : null;
+      return isVoltageDropAccepted(dropL2, Number(formState.max_permissible_voltage_drop))
+        ? "ALIMENTACIÓN CENTRAL = L/2"
+        : null;
     }
     if (formState.feeding_point_position === "central") {
       const dropL6 = voltageDropPercentL6.value;
-      return isVoltageDropAccepted(dropL6) ? "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6" : null;
+      return isVoltageDropAccepted(dropL6, Number(formState.max_permissible_voltage_drop))
+        ? "ALIMENTACIÓN A 1/6 DE CADA EXTREMO = L/6"
+        : null;
     }
     return null;
   });
@@ -205,7 +213,11 @@ export const useLineCalculations = (
   });
 
   const voltageDropMessageLine = computed(() =>
-    getVoltageDropOfferMessage(voltageDropPercentLine.value)
+    getVoltageDropOfferMessage(
+      voltageDropPercentLine.value,
+      "VER OPCIONES",
+      Number(formState.max_permissible_voltage_drop)
+    )
   );
 
   const supportsSO4Line = computed(() =>

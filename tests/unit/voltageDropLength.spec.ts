@@ -6,6 +6,7 @@ import { getEffectiveVoltageDropLength } from "../../utils/lmCatalog";
 const createFormState = (overrides = {}) => ({
   total_distance: 120,
   voltage: 380,
+  max_permissible_voltage_drop: null,
   feeding_point_position: "extreme",
   feeding_point_position_distance: null,
   ...overrides,
@@ -123,5 +124,32 @@ describe("line model selection by voltage drop", () => {
     expect(intensityToInstallLine.value).toBe("Consultar dpto. técnico");
     expect(voltageDropVoltsLine.value).toBeNull();
     expect(voltageDropPercentLine.value).toBeNull();
+  });
+
+  it("uses the customer maximum voltage drop to accept the base line", () => {
+    const defaultLimit = useVoltageDrop(
+      createFormState({ total_distance: 70, max_permissible_voltage_drop: null }),
+      { value: 100 }
+    );
+    const customLimit = useVoltageDrop(
+      createFormState({ total_distance: 70, max_permissible_voltage_drop: 4 }),
+      { value: 100 }
+    );
+
+    expect(defaultLimit.voltageDropMessage.value).toBe("VER OPCIONES 1 Y 2");
+    expect(customLimit.voltageDropPercent.value).toBeGreaterThan(3);
+    expect(customLimit.voltageDropPercent.value).toBeLessThan(4);
+    expect(customLimit.voltageDropMessage.value).toBe("SE PUEDE OFERTAR ESTA LÍNEA (<4%)");
+  });
+
+  it("uses the customer maximum voltage drop to select superior line models", () => {
+    const { intensityToInstallLine, voltageDropPercentLine, voltageDropMessageLine } = useLineCalculations(
+      createFormState({ total_distance: 80, max_permissible_voltage_drop: 4 }),
+      { value: 80 }
+    );
+
+    expect(intensityToInstallLine.value).toBe(140);
+    expect(voltageDropPercentLine.value).toBeLessThan(4);
+    expect(voltageDropMessageLine.value).toBe("SE PUEDE OFERTAR ESTA LÍNEA (<4%)");
   });
 });
