@@ -1,4 +1,5 @@
 import { computed } from "vue";
+import { calculateIntensityFromKw } from "../utils/powerCalculations";
 
 type PowerGroup = {
   kw: number | null;
@@ -105,7 +106,7 @@ export const useTotalPower = (
       return 0;
     }
     const correctedTotals = calculateCorrectedTotals(formState, gruas.value, gruasCount.value);
-    const wattsAsAmps = correctedTotals.watts / (Math.sqrt(3) * voltage * 0.8);
+    const wattsAsAmps = calculateIntensityFromKw(correctedTotals.watts / 1000, voltage);
     return Number(
       (correctedTotals.amps + wattsAsAmps).toFixed(2)
     );

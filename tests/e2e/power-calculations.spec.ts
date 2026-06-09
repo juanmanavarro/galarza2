@@ -18,7 +18,7 @@ test.describe("power and intensity inputs", () => {
     await page.locator('input[name="max_simultaneous_power_cv"]').fill("10");
 
     await expect(page.locator('input[name="max_simultaneous_power_kw"]')).toHaveValue("7.36");
-    await expect(page.locator('input[name="max_simultaneous_power_amp"]')).not.toHaveValue("");
+    await expect(page.locator('input[name="max_simultaneous_power_amp"]')).toHaveValue("13.97");
   });
 
   test("converts kW to CV in Maxima potencia por maquina", async ({ page }) => {
@@ -26,7 +26,7 @@ test.describe("power and intensity inputs", () => {
     await page.locator('input[name="max_simultaneous_power_kw"]').fill("7.355");
 
     await expect(page.locator('input[name="max_simultaneous_power_cv"]')).toHaveValue("10");
-    await expect(page.locator('input[name="max_simultaneous_power_amp"]')).not.toHaveValue("");
+    await expect(page.locator('input[name="max_simultaneous_power_amp"]')).toHaveValue("13.96");
   });
 
   test("uses direct amps in simultaneous mode with one machine", async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe("power and intensity inputs", () => {
     await page.locator('input[name="main_lift_cv_1"]').fill("10");
 
     await expect(page.locator('input[name="main_lift_kw_1"]')).toHaveValue("7.36");
-    await expect(page.locator('input[name="main_lift_amp_1"]')).not.toHaveValue("");
+    await expect(page.locator('input[name="main_lift_amp_1"]')).toHaveValue("13.97");
     await expect(page.locator("#totalPowerWatts")).toHaveValue("5888");
   });
 

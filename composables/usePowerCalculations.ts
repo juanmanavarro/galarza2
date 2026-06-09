@@ -1,3 +1,5 @@
+import { calculateIntensityFromKw } from "../utils/powerCalculations";
+
 type PowerGroup = {
   cv: number | null;
   kw: number | null;
@@ -12,8 +14,7 @@ export const usePowerCalculations = (formState: {
   const CV_TO_KW = 0.7355;
   const convertCvToKw = (value: number) => Number((value * CV_TO_KW).toFixed(2));
   const convertKwToCv = (value: number) => Number((value / CV_TO_KW).toFixed(2));
-  const calculateAmp = (kw: number) =>
-    Number(((kw * 1000) / (Math.sqrt(3) * 380 * 0.8)).toFixed(2));
+  const calculateAmp = (kw: number) => calculateIntensityFromKw(kw);
 
   const handleCvInput = (event: Event) => {
     const raw = (event.target as HTMLInputElement | null)?.value ?? "";
