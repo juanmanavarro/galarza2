@@ -23,7 +23,9 @@ export const useSupports = (
     return getSupportsSO4Count(intensityToInstallAmp.value, lengthMeters, formState.work_environment);
   });
 
-  const alimentacionExtremaRef = computed(() => getExtremeFeedingRef(intensityToInstallAmp.value));
+  const alimentacionExtremaRef = computed(() =>
+    getExtremeFeedingRef(intensityToInstallAmp.value, formState.work_environment)
+  );
 
   return {
     supportsSO4,

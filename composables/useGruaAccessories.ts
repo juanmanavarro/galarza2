@@ -15,6 +15,7 @@ type FormState = {
   max_simultaneous_power_amp: number | null;
   power_mode: string;
   voltage: number | null;
+  work_environment: string;
 };
 
 const getInstalledPowerWatts = (grua: Grua) => {
@@ -51,52 +52,82 @@ const getInstalledIntensityAmps = (grua: Grua) => {
 const getNominalIntensityAmps = (powerWatts: number, voltage: number) =>
   powerWatts / (Math.sqrt(3) * voltage * 0.8);
 
-const getTomacorrientesRef = (intensityToInstall: number | string | null) => {
+const exteriorizeTomacorriente = (reference: string, workEnvironment: string) =>
+  workEnvironment === "Exterior" ? reference.replace(/A\b/g, "AE") : reference;
+
+const exteriorizeBrazoArrastre = (reference: string, workEnvironment: string) =>
+  workEnvironment === "Exterior" ? reference.replace(/BA-(4|70)\b/g, "BA-$1E") : reference;
+
+const getTomacorrientesRef = (
+  intensityToInstall: number | string | null,
+  workEnvironment: string
+) => {
   if (typeof intensityToInstall !== "number") {
     return null;
   }
+  let reference: string | null = null;
   switch (intensityToInstall) {
     case 40:
-      return "TO-4x35A";
+      reference = "TO-4x35A";
+      break;
     case 60:
-      return "TO-4x70A";
+      reference = "TO-4x70A";
+      break;
     case 80:
-      return "TO-4x70A";
+      reference = "TO-4x70A";
+      break;
     case 100:
-      return "TO-4x35A + TO-4x70A";
+      reference = "TO-4x35A + TO-4x70A";
+      break;
     case 140:
-      return "2  TO-4x70A";
+      reference = "2  TO-4x70A";
+      break;
     case 160:
-      return "TO-4x35A + 2 TO-4x70A";
+      reference = "TO-4x35A + 2 TO-4x70A";
+      break;
     case 200:
-      return "3 TO-4x70A";
+      reference = "3 TO-4x70A";
+      break;
     default:
       return null;
   }
+  return exteriorizeTomacorriente(reference, workEnvironment);
 };
 
-const getBrazoArrastreRef = (intensityToInstall: number | string | null) => {
+const getBrazoArrastreRef = (
+  intensityToInstall: number | string | null,
+  workEnvironment: string
+) => {
   if (typeof intensityToInstall !== "number") {
     return null;
   }
+  let reference: string | null = null;
   switch (intensityToInstall) {
     case 40:
-      return "BA-4";
+      reference = "BA-4";
+      break;
     case 60:
-      return "BA-70";
+      reference = "BA-70";
+      break;
     case 80:
-      return "BA-70";
+      reference = "BA-70";
+      break;
     case 100:
-      return "BA-4 + BA-70";
+      reference = "BA-4 + BA-70";
+      break;
     case 140:
-      return "2 BA-70";
+      reference = "2 BA-70";
+      break;
     case 160:
-      return "BA-4 + 2 BA-70";
+      reference = "BA-4 + 2 BA-70";
+      break;
     case 200:
-      return "3 BA-70";
+      reference = "3 BA-70";
+      break;
     default:
       return null;
   }
+  return exteriorizeBrazoArrastre(reference, workEnvironment);
 };
 
 export const useGruaAccessories = (formState: FormState, gruas: { value: Grua[] }) => {
@@ -130,10 +161,14 @@ export const useGruaAccessories = (formState: FormState, gruas: { value: Grua[] 
   });
 
   const tomacorrientesByGrua = computed(() =>
-    intensityToInstallByGrua.value.map((intensity) => getTomacorrientesRef(intensity))
+    intensityToInstallByGrua.value.map((intensity) =>
+      getTomacorrientesRef(intensity, formState.work_environment)
+    )
   );
   const brazoArrastreByGrua = computed(() =>
-    intensityToInstallByGrua.value.map((intensity) => getBrazoArrastreRef(intensity))
+    intensityToInstallByGrua.value.map((intensity) =>
+      getBrazoArrastreRef(intensity, formState.work_environment)
+    )
   );
 
   return {

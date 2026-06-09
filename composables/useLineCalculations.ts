@@ -170,7 +170,7 @@ export const useLineCalculations = (
   });
 
   const alimentacionInteriorIntermedia = computed(() =>
-    getIntermediateFeedingRef(intensityToInstallFeeding.value)
+    getIntermediateFeedingRef(intensityToInstallFeeding.value, formState.work_environment)
   );
 
   const puntoFijoPF4Intermedia = computed(() => {
@@ -220,7 +220,9 @@ export const useLineCalculations = (
     getEmpalmesEMP4LineCount(Number(formState.total_distance), formState.feeding_point_position)
   );
 
-  const alimentacionExtremaLine = computed(() => getExtremeFeedingRef(intensityToInstallLine.value));
+  const alimentacionExtremaLine = computed(() =>
+    getExtremeFeedingRef(intensityToInstallLine.value, formState.work_environment)
+  );
 
   const su5001Line = computed(() => {
     if (!Number.isFinite(supportsSO4Line.value)) {

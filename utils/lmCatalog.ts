@@ -232,34 +232,43 @@ export const getEmpalmesEMP4IntermediaCount = (lengthMeters: number, recommended
   }
 };
 
-export const getExtremeFeedingRef = (intensityToInstall: number | string | null) => {
+const withExteriorSuffix = (reference: string, workEnvironment = "Interior") =>
+  workEnvironment === "Exterior" ? `${reference}E` : reference;
+
+export const getExtremeFeedingRef = (
+  intensityToInstall: number | string | null,
+  workEnvironment = "Interior"
+) => {
   if (typeof intensityToInstall !== "number") {
     return null;
   }
   if (intensityToInstall < 70) {
-    return "AE-4";
+    return withExteriorSuffix("AE-4", workEnvironment);
   }
   if (intensityToInstall < 110) {
-    return "AE-4-100";
+    return withExteriorSuffix("AE-4-100", workEnvironment);
   }
   if (intensityToInstall < 150) {
-    return "AE-4-140";
+    return withExteriorSuffix("AE-4-140", workEnvironment);
   }
   return "Elegir según cable (desplegar abajo):";
 };
 
-export const getIntermediateFeedingRef = (intensityToInstall: number | string | null) => {
+export const getIntermediateFeedingRef = (
+  intensityToInstall: number | string | null,
+  workEnvironment = "Interior"
+) => {
   if (typeof intensityToInstall !== "number") {
     return null;
   }
   if (intensityToInstall < 70) {
-    return "AI-4";
+    return withExteriorSuffix("AI-4", workEnvironment);
   }
   if (intensityToInstall < 110) {
-    return "AI-4-100";
+    return withExteriorSuffix("AI-4-100", workEnvironment);
   }
   if (intensityToInstall < 150) {
-    return "AI-4-140";
+    return withExteriorSuffix("AI-4-140", workEnvironment);
   }
   return "Elegir según cable (desplegar abajo):";
 };

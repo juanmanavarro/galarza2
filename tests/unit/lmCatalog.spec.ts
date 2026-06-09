@@ -3,7 +3,9 @@ import {
   calculateVoltageDropVolts,
   getEmpalmesEMP4IntermediaCount,
   getEmpalmesEMP4LineCount,
+  getExtremeFeedingRef,
   getImpedanceOhmPerM,
+  getIntermediateFeedingRef,
   getSupportsSO4Count,
   requiresTechnicalConsultation,
 } from "../../utils/lmCatalog";
@@ -56,6 +58,22 @@ describe("support counts", () => {
 
   it("uses L/1.0 for exterior LM160E and LM200E", () => {
     expect(getSupportsSO4Count(160, 80, "Exterior")).toBe(80);
+  });
+});
+
+describe("feeding references", () => {
+  it("keeps interior feeding references without exterior suffix", () => {
+    expect(getExtremeFeedingRef(60, "Interior")).toBe("AE-4");
+    expect(getIntermediateFeedingRef(100, "Interior")).toBe("AI-4-100");
+  });
+
+  it("adds exterior suffix to extreme and intermediate feeding references", () => {
+    expect(getExtremeFeedingRef(60, "Exterior")).toBe("AE-4E");
+    expect(getExtremeFeedingRef(100, "Exterior")).toBe("AE-4-100E");
+    expect(getExtremeFeedingRef(140, "Exterior")).toBe("AE-4-140E");
+    expect(getIntermediateFeedingRef(60, "Exterior")).toBe("AI-4E");
+    expect(getIntermediateFeedingRef(100, "Exterior")).toBe("AI-4-100E");
+    expect(getIntermediateFeedingRef(140, "Exterior")).toBe("AI-4-140E");
   });
 });
 

@@ -347,9 +347,29 @@ const shouldRequireTechnicalConsultation = computed(() =>
     hasSectionedZones: formState.has_sectioned_zones,
   })
 );
-const shouldShowRightPanelCalculations = computed(
-  () => tipoRecorrido.value === "Línea recta" && formState.work_environment === "Interior"
+const shouldShowRightPanelCalculations = computed(() =>
+  tipoRecorrido.value === "Línea recta" &&
+  ["Interior", "Exterior"].includes(formState.work_environment)
 );
+const isExteriorEnvironment = computed(() => formState.work_environment === "Exterior");
+const supportsReferenceLabel = computed(() => isExteriorEnvironment.value ? "SO4E" : "SO-4");
+const spliceReferenceLabel = computed(() => isExteriorEnvironment.value ? "EMP4E" : "EMP-4");
+const fixedPointReferenceLabel = computed(() => isExteriorEnvironment.value ? "PF-4E" : "PF-4");
+const endCapReferenceLabel = computed(() => isExteriorEnvironment.value ? "TE-4E" : "TE-4");
+const universalSupportReferenceLabel = computed(() =>
+  isExteriorEnvironment.value ? "SU-500-1-INOX" : "SU-500-1"
+);
+const feedingCableOptions = computed(() => {
+  const prefix = isExteriorEnvironment.value ? "AG-4E" : "AG-4";
+  return [
+    `${prefix}-1xM25 (1 cable, orificio de 13-18 mm)`,
+    `${prefix}-1xM32 (1 cable, orificio de 18-25 mm)`,
+    `${prefix}-1xM40 (1 cable, orificio de 22-32 mm)`,
+    `${prefix}-1xM63 (1 cable, orificio de 34-44 mm)`,
+    `${prefix}-4xM25 (4 cables, orificio de 13-18 mm)`,
+    `${prefix}-4xM32 (4 cables, orificio de 18-25 mm)`,
+  ];
+});
 const hasAnyRightPanelInput = computed(() => {
   const hasGruaPower = gruas.value.some((grua) =>
     Object.values(grua?.servicios ?? {}).some(
@@ -1665,7 +1685,7 @@ const handleReset = async () => {
                 <div v-if="voltageDropMessage !== 'VER OPCIONES 1 Y 2'" class="mt-2 grid gap-4 md:grid-cols-2">
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="supportsSO4">
-                      Soportes (SO-4)
+                      Soportes ({{ supportsReferenceLabel }})
                     </label>
                     <input
                       id="supportsSO4"
@@ -1677,7 +1697,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="empalmesEMP4">
-                      Empalmes (EMP-4)
+                      Empalmes ({{ spliceReferenceLabel }})
                     </label>
                     <input
                       id="empalmesEMP4"
@@ -1709,29 +1729,14 @@ const handleReset = async () => {
                       :disabled="!hasAnyRightPanelInput"
                     >
                       <option value="-">-</option>
-                      <option value="AG-4-1xM25 (1 cable orificio de 13-18 mm)">
-                        AG-4-1xM25 (1 cable orificio de 13-18 mm)
-                      </option>
-                      <option value="AG-4-1xM32 (1 cable orificio de 18-25 mm)">
-                        AG-4-1xM32 (1 cable orificio de 18-25 mm)
-                      </option>
-                      <option value="AG-4-1xM40 (1 cable orificio de 22-32 mm)">
-                        AG-4-1xM40 (1 cable orificio de 22-32 mm)
-                      </option>
-                      <option value="AG-4-1xM63 (1 cable orificio de 34-44 mm)">
-                        AG-4-1xM63 (1 cable orificio de 34-44 mm)
-                      </option>
-                      <option value="AG-4-4xM25 (4 cables orificio de 13-18 mm)">
-                        AG-4-4xM25 (4 cables orificio de 13-18 mm)
-                      </option>
-                      <option value="AG-4-4xM32 (4 cables orificio de 18-25 mm)">
-                        AG-4-4xM32 (4 cables orificio de 18-25 mm)
+                      <option v-for="option in feedingCableOptions" :key="option" :value="option">
+                        {{ option }}
                       </option>
                     </select>
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="puntoFijoPF4">
-                      Punto Fijo (PF-4)
+                      Punto Fijo ({{ fixedPointReferenceLabel }})
                     </label>
                     <input
                       id="puntoFijoPF4"
@@ -1743,7 +1748,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="tapaExtremaTE4">
-                      Tapa Extrema (TE-4)
+                      Tapa Extrema ({{ endCapReferenceLabel }})
                     </label>
                     <input
                       id="tapaExtremaTE4"
@@ -1755,7 +1760,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="su5001">
-                      SU-500-1
+                      {{ universalSupportReferenceLabel }}
                     </label>
                     <input
                       id="su5001"
@@ -1839,7 +1844,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="supportsSO4Line">
-                      Soportes (SO-4)
+                      Soportes ({{ supportsReferenceLabel }})
                     </label>
                     <input
                       id="supportsSO4Line"
@@ -1851,7 +1856,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="empalmesEMP4Line">
-                      Empalmes (EMP-4)
+                      Empalmes ({{ spliceReferenceLabel }})
                     </label>
                     <input
                       id="empalmesEMP4Line"
@@ -1884,29 +1889,14 @@ const handleReset = async () => {
                       :disabled="isConsultingLine"
                     >
                       <option value=""></option>
-                      <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
-                        AG-4-1xM25 (1 cable, orificio de 13-18 mm)
-                      </option>
-                      <option value="AG-4-1xM32 (1 cable, orificio de 18-25 mm)">
-                        AG-4-1xM32 (1 cable, orificio de 18-25 mm)
-                      </option>
-                      <option value="AG-4-1xM40 (1 cable, orificio de 22-32 mm)">
-                        AG-4-1xM40 (1 cable, orificio de 22-32 mm)
-                      </option>
-                      <option value="AG-4-1xM63 (1 cable, orificio de 34-44 mm)">
-                        AG-4-1xM63 (1 cable, orificio de 34-44 mm)
-                      </option>
-                      <option value="AG-4-4xM25 (4 cables, orificio de 13-18 mm)">
-                        AG-4-4xM25 (4 cables, orificio de 13-18 mm)
-                      </option>
-                      <option value="AG-4-4xM32 (4 cables, orificio de 18-25 mm)">
-                        AG-4-4xM32 (4 cables, orificio de 18-25 mm)
+                      <option v-for="option in feedingCableOptions" :key="option" :value="option">
+                        {{ option }}
                       </option>
                     </select>
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="puntoFijoPF4Line">
-                      Punto Fijo (PF-4)
+                      Punto Fijo ({{ fixedPointReferenceLabel }})
                     </label>
                     <input
                       id="puntoFijoPF4Line"
@@ -1918,7 +1908,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Line">
-                      Tapa Extrema (TE-4)
+                      Tapa Extrema ({{ endCapReferenceLabel }})
                     </label>
                     <input
                       id="tapaExtremaTE4Line"
@@ -1930,7 +1920,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="su5001Line">
-                      SU-500-1
+                      {{ universalSupportReferenceLabel }}
                     </label>
                     <input
                       id="su5001Line"
@@ -2008,7 +1998,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="supportsSO4Intermedia">
-                      Soportes (SO-4)
+                      Soportes ({{ supportsReferenceLabel }})
                     </label>
                     <input
                       id="supportsSO4Intermedia"
@@ -2020,7 +2010,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="empalmesEMP4Intermedia">
-                      Empalmes (EMP-4)
+                      Empalmes ({{ spliceReferenceLabel }})
                     </label>
                     <input
                       id="empalmesEMP4Intermedia"
@@ -2044,7 +2034,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="alimentacionInteriorIntermedia">
-                      Alimentación  (desde 40 A hasta 140 A) (tipo )
+                      Alimentación (desde 40 A hasta 140 A)
                     </label>
                     <input
                       id="alimentacionInteriorIntermedia"
@@ -2060,29 +2050,14 @@ const handleReset = async () => {
                     </label>
                     <select id="alimentacion160200Intermedia" class="select select-bordered w-full">
                     <option value=""></option>
-                    <option value="AG-4-1xM25 (1 cable, orificio de 13-18 mm)">
-                      AG-4-1xM25 (1 cable, orificio de 13-18 mm)
-                    </option>
-                    <option value="AG-4-1xM32 (1 cable, orificio de 18-25 mm)">
-                      AG-4-1xM32 (1 cable, orificio de 18-25 mm)
-                    </option>
-                    <option value="AG-4-1xM40 (1 cable, orificio de 22-32 mm)">
-                      AG-4-1xM40 (1 cable, orificio de 22-32 mm)
-                    </option>
-                    <option value="AG-4-1xM63 (1 cable, orificio de 34-44 mm)">
-                      AG-4-1xM63 (1 cable, orificio de 34-44 mm)
-                    </option>
-                    <option value="AG-4-4xM25 (4 cables, orificio de 13-18 mm)">
-                      AG-4-4xM25 (4 cables, orificio de 13-18 mm)
-                    </option>
-                    <option value="AG-4-4xM32 (4 cables, orificio de 18-25 mm)">
-                      AG-4-4xM32 (4 cables, orificio de 18-25 mm)
+                    <option v-for="option in feedingCableOptions" :key="option" :value="option">
+                      {{ option }}
                     </option>
                     </select>
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="puntoFijoPF4Intermedia">
-                      Punto Fijo (PF-4)
+                      Punto Fijo ({{ fixedPointReferenceLabel }})
                     </label>
                     <input
                       id="puntoFijoPF4Intermedia"
@@ -2094,7 +2069,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="tapaExtremaTE4Intermedia">
-                      Tapa Extrema (TE-4)
+                      Tapa Extrema ({{ endCapReferenceLabel }})
                     </label>
                     <input
                       id="tapaExtremaTE4Intermedia"
@@ -2106,7 +2081,7 @@ const handleReset = async () => {
                   </div>
                   <div class="space-y-2">
                     <label class="label-text text-sm font-semibold" for="su5001Intermedia">
-                      SU-500-1
+                      {{ universalSupportReferenceLabel }}
                     </label>
                     <input
                       id="su5001Intermedia"
@@ -2149,7 +2124,7 @@ const handleReset = async () => {
             <section class="card bg-base-200 shadow-sm w-full">
               <div class="card-body">
                 <p class="text-sm text-base-content/70">
-                  Por ahora, los cálculos solo están implementados para “Línea recta” y “Interior”.
+                  Por ahora, los cálculos solo están implementados para “Línea recta”.
                 </p>
               </div>
             </section>

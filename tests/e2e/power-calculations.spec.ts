@@ -83,4 +83,22 @@ test.describe("power and intensity inputs", () => {
       page.getByText("Esta configuración requiere consulta con el servicio técnico de IGA.")
     ).toHaveCount(0);
   });
+
+  test("shows straight-line exterior calculations with exterior references", async ({ page }) => {
+    await page.locator('input[name="total_distance"]').fill("10");
+    await page.locator('input[name="work_environment"][value="Exterior"]').check();
+    await page.locator('input[name="power_mode"][value="simultanea"]').check();
+    await page.locator('input[name="max_simultaneous_power_amp"]').fill("50");
+
+    await expect(page.locator("#totalPowerWatts")).toBeVisible();
+    await expect(page.locator("#intensityToInstall")).toHaveValue("60");
+    await expect(page.locator("#alimentacionExtremaRef")).toHaveValue("AE-4E");
+    await expect(page.getByText("Soportes (SO4E)")).toBeVisible();
+    await expect(page.getByText("Empalmes (EMP4E)")).toBeVisible();
+    await expect(page.getByText("Punto Fijo (PF-4E)")).toBeVisible();
+    await expect(page.getByText("Tapa Extrema (TE-4E)")).toBeVisible();
+    await expect(page.getByText("SU-500-1-INOX")).toBeVisible();
+    await expect(page.locator(".grua-summary-item").first().locator("input").first()).toHaveValue("TO-4x70AE");
+    await expect(page.locator(".grua-summary-item").first().locator("input").nth(1)).toHaveValue("BA-70E");
+  });
 });
