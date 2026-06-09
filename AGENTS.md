@@ -14,6 +14,13 @@
 - `npm run preview`: serves the production build locally.
 - `npm run generate`: generates a static build (if applicable to the app).
 
+## Deployment
+- Deploys are prepared locally and then pulled from the production server.
+- On the local machine, run `./deploy.sh`.
+- The script generates the static Nuxt build, copies the output into `deploy/`, includes `mail.php`, commits the updated `deploy/` directory, and pushes the commit.
+- On the production server, run `git pull` to deploy the latest pushed build.
+- Do not normally run `./deploy.sh` on production, because the script creates a deploy commit and pushes it.
+
 ## Coding Style & Naming Conventions
 - Indentation: 2 spaces in Vue and config files.
 - Keep Vue SFCs organized as `<script>`, `<template>`, `<style>` when adding sections.
