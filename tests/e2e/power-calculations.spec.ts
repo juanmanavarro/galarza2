@@ -120,4 +120,74 @@ test.describe("power and intensity inputs", () => {
     await expect(page.locator(".grua-summary-item").first().locator("input").first()).toHaveValue("TO-4x70AE");
     await expect(page.locator(".grua-summary-item").first().locator("input").nth(1)).toHaveValue("BA-70E");
   });
+
+  test("sends configuration with calculated result and materials breakdown", async ({ page }) => {
+    await page.route("**/mail.php", async (route) => {
+      await route.fulfill({ status: 200, body: "ok" });
+    });
+
+    await page.locator('input[name="application_industry_type"]').fill("Nave industrial");
+    await page.locator('input[name="total_distance"]').fill("10");
+    await page.locator('input[name="power_mode"][value="simultanea"]').check();
+    await page.locator('input[name="max_simultaneous_power_amp"]').fill("50");
+
+    const requestPromise = page.waitForRequest("**/mail.php");
+    await page.locator("footer").getByRole("button", { name: "Enviar" }).click();
+    await page.locator('input[name="send_name"]').fill("Cliente Test");
+    await page.locator('input[name="send_location"]').fill("Gipuzkoa / ES");
+    await page.locator('input[name="send_email"]').fill("cliente@example.com");
+    await page.locator("#sendModal").getByRole("button", { name: "Enviar" }).click();
+
+    const request = await requestPromise;
+    const payload = JSON.parse(request.postData() || "{}");
+
+    expect(payload).toMatchObject({
+      name: "Cliente Test",
+      location: "Gipuzkoa / ES",
+      email: "cliente@example.com",
+      config: {
+        application_industry_type: "Nave industrial",
+        max_simultaneous_power_amp: 50,
+      },
+      result: {
+        technicalConsultationRequired: false,
+        totalPowerAmps: 40,
+        intensityToInstallAmp: 60,
+      },
+    });
+    expect(payload.result.totalPowerWatts).toBe(0);
+    expect(payload.result.voltageDropPercent).toBeGreaterThan(0);
+    expect(payload.materials).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          section: "resultado",
+          reference: "LM60",
+          quantity: 10,
+          unit: "m",
+          description: "Línea conductora LM",
+        }),
+        expect.objectContaining({
+          section: "resultado",
+          reference: "SO-4",
+          quantity: 5,
+          unit: "ud",
+          description: "Soportes",
+        }),
+        expect.objectContaining({
+          section: "resultado",
+          reference: "TO-4x70A",
+          quantity: 1,
+          unit: "ud",
+          description: "Tomacorrientes grua 1",
+        }),
+        expect.objectContaining({
+          section: "resultado",
+          reference: "BA-70",
+          quantity: 1,
+          unit: "ud",
+          description: "Brazo arrastre grua 1",
+        }),
+      ])
+    );
+  });
 });

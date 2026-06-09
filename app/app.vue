@@ -154,6 +154,175 @@ const buildConfigPayload = () => {
   };
 };
 
+const getPayloadValue = (value) => hasAnyRightPanelInput.value ? value ?? null : null;
+
+const addMaterial = (materials, { section, reference, quantity, unit = "ud", description }) => {
+  if (reference === null || reference === undefined || reference === "") {
+    return;
+  }
+  if (quantity === null || quantity === undefined || quantity === "" || quantity === 0) {
+    return;
+  }
+  materials.push({
+    section,
+    reference,
+    quantity,
+    unit,
+    description,
+  });
+};
+
+const addCommonMaterials = (materials, {
+  section,
+  intensityToInstall,
+  supports,
+  empalmes,
+  alimentacionRef,
+  puntoFijo = 1,
+  tapaExtrema = 1,
+  universalSupports,
+}) => {
+  const lineReference = typeof intensityToInstall === "number"
+    ? `LM${intensityToInstall}${isExteriorEnvironment.value ? "E" : ""}`
+    : null;
+  addMaterial(materials, {
+    section,
+    reference: lineReference,
+    quantity: Number(formState.total_distance),
+    unit: "m",
+    description: "Línea conductora LM",
+  });
+  addMaterial(materials, {
+    section,
+    reference: supportsReferenceLabel.value,
+    quantity: supports,
+    description: "Soportes",
+  });
+  addMaterial(materials, {
+    section,
+    reference: spliceReferenceLabel.value,
+    quantity: empalmes,
+    description: "Empalmes",
+  });
+  addMaterial(materials, {
+    section,
+    reference: alimentacionRef,
+    quantity: 1,
+    description: "Alimentación extrema",
+  });
+  addMaterial(materials, {
+    section,
+    reference: fixedPointReferenceLabel.value,
+    quantity: puntoFijo,
+    description: "Punto fijo",
+  });
+  addMaterial(materials, {
+    section,
+    reference: endCapReferenceLabel.value,
+    quantity: tapaExtrema,
+    description: "Tapa extrema",
+  });
+  addMaterial(materials, {
+    section,
+    reference: universalSupportReferenceLabel.value,
+    quantity: universalSupports,
+    description: "Soportes universales",
+  });
+};
+
+const addGruaMaterials = (materials, section, useValues = true) => {
+  if (!useValues) {
+    return;
+  }
+  for (let index = 0; index < gruasCount.value; index += 1) {
+    addMaterial(materials, {
+      section,
+      reference: tomacorrientesByGrua.value[index],
+      quantity: 1,
+      description: `Tomacorrientes grua ${index + 1}`,
+    });
+    addMaterial(materials, {
+      section,
+      reference: brazoArrastreByGrua.value[index],
+      quantity: 1,
+      description: `Brazo arrastre grua ${index + 1}`,
+    });
+  }
+};
+
+const buildCalculatedResultPayload = () => ({
+  technicalConsultationRequired: shouldRequireTechnicalConsultation.value,
+  totalPowerWatts: getPayloadValue(totalPowerWatts.value),
+  totalPowerAmps: getPayloadValue(totalPowerAmps.value),
+  intensityToInstallAmp: getPayloadValue(intensityToInstallAmp.value),
+  voltageDropVolts: getPayloadValue(voltageDropVolts.value),
+  voltageDropPercent: getPayloadValue(voltageDropPercent.value),
+  voltageDropMessage: voltageDropMessage.value || null,
+  lineIncreaseOption: voltageDropMessage.value === "VER OPCIONES 1 Y 2" ? {
+    intensityToInstallAmp: intensityToInstallLine.value,
+    voltageDropVolts: voltageDropVoltsLine.value,
+    voltageDropPercent: voltageDropPercentLine.value,
+    voltageDropMessage: voltageDropMessageLine.value || null,
+  } : null,
+  intermediateFeedingOption: voltageDropMessage.value === "VER OPCIONES 1 Y 2" ? {
+    recommendedFeedingType: recommendedFeedingType.value,
+    selectedLengthMeters: selectedFeedingLengthMeters.value,
+    intensityToInstallAmp: intensityToInstallFeeding.value,
+    voltageDropPercent: voltageDropPercentIntermedia.value,
+    voltageDropPercentDisplay: voltageDropPercentIntermediaDisplay.value,
+  } : null,
+});
+
+const buildMaterialsPayload = () => {
+  const materials = [];
+  if (!hasAnyRightPanelInput.value || shouldRequireTechnicalConsultation.value) {
+    return materials;
+  }
+
+  if (voltageDropMessage.value !== "VER OPCIONES 1 Y 2") {
+    addCommonMaterials(materials, {
+      section: "resultado",
+      intensityToInstall: intensityToInstallAmp.value,
+      supports: supportsSO4.value,
+      empalmes: empalmesEMP4.value,
+      alimentacionRef: alimentacionExtremaRef.value,
+      universalSupports: su5001.value,
+    });
+    addGruaMaterials(materials, "resultado");
+    return materials;
+  }
+
+  addCommonMaterials(materials, {
+    section: "opcion_incrementar_intensidad_linea",
+    intensityToInstall: intensityToInstallLine.value,
+    supports: supportsSO4Line.value,
+    empalmes: empalmesEMP4Line.value,
+    alimentacionRef: alimentacionExtremaLine.value,
+    universalSupports: su5001Line.value,
+  });
+  addGruaMaterials(materials, "opcion_incrementar_intensidad_linea", !isConsultingLine.value);
+
+  addCommonMaterials(materials, {
+    section: "opcion_alimentacion_intermedia",
+    intensityToInstall: intensityToInstallFeeding.value,
+    supports: supportsSO4Intermedia.value,
+    empalmes: empalmesEMP4Intermedia.value,
+    alimentacionRef: alimentacionInteriorIntermedia.value,
+    puntoFijo: puntoFijoPF4Intermedia.value,
+    tapaExtrema: tapaExtremaTE4Intermedia.value,
+    universalSupports: su5001Intermedia.value,
+  });
+  addMaterial(materials, {
+    section: "opcion_alimentacion_intermedia",
+    reference: alimentacionInteriorIntermedia.value,
+    quantity: alimentacionUnidadesIntermedia.value,
+    description: "Alimentación intermedia",
+  });
+  addGruaMaterials(materials, "opcion_alimentacion_intermedia");
+
+  return materials;
+};
+
 const loadStoredState = () => {
   if (typeof window === "undefined") {
     return;
@@ -269,6 +438,8 @@ const {
   },
   getPayload: () => ({
     config: buildConfigPayload(),
+    result: buildCalculatedResultPayload(),
+    materials: buildMaterialsPayload(),
   }),
   prefillWhenLocal: true,
   onSuccess: () => {
