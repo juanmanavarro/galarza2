@@ -52,6 +52,19 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
   exit;
 }
 
+$result = $data['result'] ?? null;
+$totalPowerWatts = is_array($result) ? (float) ($result['totalPowerWatts'] ?? 0) : 0;
+$totalPowerAmps = is_array($result) ? (float) ($result['totalPowerAmps'] ?? 0) : 0;
+
+if (!is_array($result) || ($totalPowerWatts <= 0 && $totalPowerAmps <= 0)) {
+  http_response_code(422);
+  echo json_encode([
+    'ok' => false,
+    'error' => 'No hay resultados calculados para enviar',
+  ]);
+  exit;
+}
+
 $to = getenv('MAIL_TO') ?: 'hola@juanmanavar.ro';
 $subject = 'Nuevo envío de formulario';
 
