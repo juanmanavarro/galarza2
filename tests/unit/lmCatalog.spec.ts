@@ -150,6 +150,15 @@ describe("feeding references", () => {
     expect(getIntermediateFeedingRef(100, "Exterior")).toBe("AI-4-100E");
     expect(getIntermediateFeedingRef(140, "Exterior")).toBe("AI-4-140E");
   });
+
+  it("uses documented cable gland references for LM160 and LM200 feeding", () => {
+    expect(getExtremeFeedingRef(160, "Interior")).toBe("AG-4-4xM25");
+    expect(getExtremeFeedingRef(200, "Interior")).toBe("AG-4-4xM32");
+    expect(getExtremeFeedingRef(160, "Exterior")).toBe("AG-4E-4xM25");
+    expect(getExtremeFeedingRef(200, "Exterior")).toBe("AG-4E-4xM32");
+    expect(getIntermediateFeedingRef(160, "Interior")).toBe("AG-4-4xM25");
+    expect(getIntermediateFeedingRef(200, "Exterior")).toBe("AG-4E-4xM32");
+  });
 });
 
 describe("splice counts", () => {

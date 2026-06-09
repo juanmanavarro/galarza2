@@ -109,6 +109,7 @@ test.describe("power and intensity inputs", () => {
   test("shows straight-line exterior calculations with exterior references", async ({ page }) => {
     await page.locator('input[name="total_distance"]').fill("10");
     await page.locator('input[name="work_environment"][value="Exterior"]').check();
+    await page.locator('input[name="supply_support_arms"][value="1"]').check();
     await page.locator('input[name="power_mode"][value="simultanea"]').check();
     await page.locator('input[name="max_simultaneous_power_amp"]').fill("50");
 
@@ -189,8 +190,10 @@ test.describe("power and intensity inputs", () => {
 
     await page.locator('input[name="application_industry_type"]').fill("Nave industrial");
     await page.locator('input[name="total_distance"]').fill("10");
+    await page.locator('input[name="has_dust"][value="1"]').check();
+    await page.locator('input[name="supply_support_arms"][value="1"]').check();
     await page.locator('input[name="power_mode"][value="simultanea"]').check();
-    await page.locator('input[name="max_simultaneous_power_amp"]').fill("50");
+    await page.locator('input[name="max_simultaneous_power_amp"]').fill("100");
 
     const requestPromise = page.waitForRequest("**/mail.php");
     await page.locator("footer").getByRole("button", { name: "Enviar" }).click();
@@ -208,13 +211,13 @@ test.describe("power and intensity inputs", () => {
       email: "cliente@example.com",
       config: {
         application_industry_type: "Nave industrial",
-        max_simultaneous_power_amp: 50,
+        max_simultaneous_power_amp: 100,
       },
       result: {
         technicalConsultationRequired: false,
-        totalPowerAmps: 40,
-        intensityToInstallAmp: 60,
-        lmModelRef: "LM60",
+        totalPowerAmps: 80,
+        intensityToInstallAmp: 100,
+        lmModelRef: "LM100",
       },
     });
     expect(payload.result.totalPowerWatts).toBe(0);
@@ -223,28 +226,35 @@ test.describe("power and intensity inputs", () => {
       expect.arrayContaining([
         expect.objectContaining({
           section: "resultado",
-          reference: "LM60",
+          reference: "LM100",
           quantity: 10,
           unit: "m",
           description: "Línea conductora LM",
         }),
         expect.objectContaining({
           section: "resultado",
-          reference: "SO-4",
+          reference: "SO4",
           quantity: 5,
           unit: "ud",
           description: "Soportes",
         }),
         expect.objectContaining({
           section: "resultado",
-          reference: "EMP-4",
+          reference: "EMPC4",
           quantity: 2,
           unit: "ud",
           description: "Empalmes",
         }),
         expect.objectContaining({
           section: "resultado",
-          reference: "AE-4",
+          reference: "PC4",
+          quantity: 10,
+          unit: "m",
+          description: "Perfil de cierre por polvo",
+        }),
+        expect.objectContaining({
+          section: "resultado",
+          reference: "AE-4-100",
           quantity: 1,
           unit: "ud",
           description: "Alimentación extrema",
@@ -279,7 +289,21 @@ test.describe("power and intensity inputs", () => {
         }),
         expect.objectContaining({
           section: "resultado",
+          reference: "TO-4x35A",
+          quantity: 1,
+          unit: "ud",
+          description: "Tomacorrientes grua 1",
+        }),
+        expect.objectContaining({
+          section: "resultado",
           reference: "BA-70",
+          quantity: 1,
+          unit: "ud",
+          description: "Brazo arrastre grua 1",
+        }),
+        expect.objectContaining({
+          section: "resultado",
+          reference: "BA-4",
           quantity: 1,
           unit: "ud",
           description: "Brazo arrastre grua 1",

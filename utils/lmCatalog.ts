@@ -262,6 +262,9 @@ export const getEmpalmesEMP4IntermediaCount = (lengthMeters: number, recommended
 const withExteriorSuffix = (reference: string, workEnvironment = "Interior") =>
   workEnvironment === "Exterior" ? `${reference}E` : reference;
 
+const withExteriorPrefix = (reference: string, workEnvironment = "Interior") =>
+  workEnvironment === "Exterior" ? reference.replace("AG-4", "AG-4E") : reference;
+
 export const getExtremeFeedingRef = (
   intensityToInstall: number | string | null,
   workEnvironment = "Interior"
@@ -278,7 +281,10 @@ export const getExtremeFeedingRef = (
   if (intensityToInstall < 150) {
     return withExteriorSuffix("AE-4-140", workEnvironment);
   }
-  return "Elegir según cable (desplegar abajo):";
+  if (intensityToInstall < 190) {
+    return withExteriorPrefix("AG-4-4xM25", workEnvironment);
+  }
+  return withExteriorPrefix("AG-4-4xM32", workEnvironment);
 };
 
 export const getIntermediateFeedingRef = (
@@ -297,5 +303,8 @@ export const getIntermediateFeedingRef = (
   if (intensityToInstall < 150) {
     return withExteriorSuffix("AI-4-140", workEnvironment);
   }
-  return "Elegir según cable (desplegar abajo):";
+  if (intensityToInstall < 190) {
+    return withExteriorPrefix("AG-4-4xM25", workEnvironment);
+  }
+  return withExteriorPrefix("AG-4-4xM32", workEnvironment);
 };

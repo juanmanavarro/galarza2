@@ -13,6 +13,7 @@ import {
   NO_STANDARD_MODEL_MESSAGE,
   TECHNICAL_CONSULTATION_REQUIRED_MESSAGE,
   getLmModelRef,
+  getIntermediateFeedingRef,
   requiresTechnicalConsultation,
 } from "../utils/lmCatalog";
 
@@ -174,12 +175,50 @@ const addMaterial = (materials, { section, reference, quantity, unit = "ud", des
   });
 };
 
+const addMaterialReference = (materials, { section, reference, quantity = 1, unit = "ud", description }) => {
+  if (!reference) {
+    return;
+  }
+  for (const part of String(reference).split(" + ")) {
+    const match = part.match(/^(\d+)\s+(.+)$/);
+    addMaterial(materials, {
+      section,
+      reference: match ? match[2] : part,
+      quantity: (match ? Number(match[1]) : 1) * quantity,
+      unit,
+      description,
+    });
+  }
+};
+
+const isIntermediateFeeding = () => ["central", "distance"].includes(formState.feeding_point_position);
+
+const getLineFeedingRef = (intensityToInstall) =>
+  isIntermediateFeeding()
+    ? getIntermediateFeedingRef(intensityToInstall, formState.work_environment)
+    : alimentacionExtremaRef.value;
+
+const getLineFixedPointCount = () => isIntermediateFeeding() ? 2 : 1;
+
+const getLineEndCapCount = () => isIntermediateFeeding() ? 2 : 1;
+
+const getLineFeedingDescription = () => isIntermediateFeeding() ? "Alimentación intermedia" : "Alimentación extrema";
+
+const getUniversalSupportCount = (supports) => {
+  if (!Number.isFinite(supports)) {
+    return null;
+  }
+  return supports + getLineFixedPointCount();
+};
+
 const addCommonMaterials = (materials, {
   section,
   intensityToInstall,
   supports,
   empalmes,
   alimentacionRef,
+  alimentacionQuantity = 1,
+  alimentacionDescription = "Alimentación extrema",
   puntoFijo = 1,
   tapaExtrema = 1,
   universalSupports,
@@ -206,9 +245,16 @@ const addCommonMaterials = (materials, {
   });
   addMaterial(materials, {
     section,
+    reference: formState.has_dust === "1" ? "PC4" : null,
+    quantity: Number(formState.total_distance),
+    unit: "m",
+    description: "Perfil de cierre por polvo",
+  });
+  addMaterial(materials, {
+    section,
     reference: alimentacionRef,
-    quantity: 1,
-    description: "Alimentación extrema",
+    quantity: alimentacionQuantity,
+    description: alimentacionDescription,
   });
   addMaterial(materials, {
     section,
@@ -224,7 +270,7 @@ const addCommonMaterials = (materials, {
   });
   addMaterial(materials, {
     section,
-    reference: universalSupportReferenceLabel.value,
+    reference: formState.supply_support_arms === "1" ? universalSupportReferenceLabel.value : null,
     quantity: universalSupports,
     description: "Soportes universales",
   });
@@ -235,13 +281,13 @@ const addGruaMaterials = (materials, section, useValues = true) => {
     return;
   }
   for (let index = 0; index < gruasCount.value; index += 1) {
-    addMaterial(materials, {
+    addMaterialReference(materials, {
       section,
       reference: tomacorrientesByGrua.value[index],
       quantity: 1,
       description: `Tomacorrientes grua ${index + 1}`,
     });
-    addMaterial(materials, {
+    addMaterialReference(materials, {
       section,
       reference: brazoArrastreByGrua.value[index],
       quantity: 1,
@@ -289,8 +335,11 @@ const buildMaterialsPayload = () => {
       intensityToInstall: intensityToInstallAmp.value,
       supports: supportsSO4.value,
       empalmes: empalmesEMP4.value,
-      alimentacionRef: alimentacionExtremaRef.value,
-      universalSupports: su5001.value,
+      alimentacionRef: getLineFeedingRef(intensityToInstallAmp.value),
+      alimentacionDescription: getLineFeedingDescription(),
+      puntoFijo: getLineFixedPointCount(),
+      tapaExtrema: getLineEndCapCount(),
+      universalSupports: getUniversalSupportCount(supportsSO4.value),
     });
     addGruaMaterials(materials, "resultado");
     return materials;
@@ -302,8 +351,13 @@ const buildMaterialsPayload = () => {
       intensityToInstall: intensityToInstallLine.value,
       supports: supportsSO4Line.value,
       empalmes: empalmesEMP4Line.value,
-      alimentacionRef: alimentacionExtremaLine.value,
-      universalSupports: su5001Line.value,
+      alimentacionRef: isIntermediateFeeding()
+        ? getIntermediateFeedingRef(intensityToInstallLine.value, formState.work_environment)
+        : alimentacionExtremaLine.value,
+      alimentacionDescription: getLineFeedingDescription(),
+      puntoFijo: getLineFixedPointCount(),
+      tapaExtrema: getLineEndCapCount(),
+      universalSupports: getUniversalSupportCount(supportsSO4Line.value),
     });
     addGruaMaterials(materials, "opcion_incrementar_intensidad_linea");
   }
@@ -315,15 +369,11 @@ const buildMaterialsPayload = () => {
       supports: supportsSO4Intermedia.value,
       empalmes: empalmesEMP4Intermedia.value,
       alimentacionRef: alimentacionInteriorIntermedia.value,
+      alimentacionQuantity: alimentacionUnidadesIntermedia.value,
+      alimentacionDescription: "Alimentación intermedia",
       puntoFijo: puntoFijoPF4Intermedia.value,
       tapaExtrema: tapaExtremaTE4Intermedia.value,
       universalSupports: su5001Intermedia.value,
-    });
-    addMaterial(materials, {
-      section: "opcion_alimentacion_intermedia",
-      reference: alimentacionInteriorIntermedia.value,
-      quantity: alimentacionUnidadesIntermedia.value,
-      description: "Alimentación intermedia",
     });
     addGruaMaterials(materials, "opcion_alimentacion_intermedia");
   }
@@ -538,8 +588,13 @@ const lmModelRefFeeding = computed(() =>
 const isFeedingOptionUnavailable = computed(() =>
   !recommendedFeedingType.value || isConsultingFeeding.value
 );
-const supportsReferenceLabel = computed(() => isExteriorEnvironment.value ? "SO4E" : "SO-4");
-const spliceReferenceLabel = computed(() => isExteriorEnvironment.value ? "EMP4E" : "EMP-4");
+const supportsReferenceLabel = computed(() => isExteriorEnvironment.value ? "SO4E" : "SO4");
+const spliceReferenceLabel = computed(() => {
+  if (formState.has_dust === "1") {
+    return isExteriorEnvironment.value ? "EMPC4E" : "EMPC4";
+  }
+  return isExteriorEnvironment.value ? "EMP4E" : "EMP4";
+});
 const fixedPointReferenceLabel = computed(() => isExteriorEnvironment.value ? "PF-4E" : "PF-4");
 const endCapReferenceLabel = computed(() => isExteriorEnvironment.value ? "TE-4E" : "TE-4");
 const universalSupportReferenceLabel = computed(() =>
