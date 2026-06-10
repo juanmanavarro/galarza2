@@ -5,7 +5,7 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "concurrently -k -n nuxt,mail \"nuxt dev\" \"npm run mail-server\"",
-    "mail-server": "python3 local-mail-server.py",
+    "mail-server": "PYTHONUNBUFFERED=1 python3 local-mail-server.py",
     "generate": "nuxt generate && cp mail.php .output/public/mail.php",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",

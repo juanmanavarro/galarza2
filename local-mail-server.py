@@ -3,15 +3,12 @@
 """
 Local SMTP mail server for development.
 
-Replaces the PHP mail.php endpoint when running locally.
-Listens on port 8001 and handles POST /mail.php by sending
-email via SMTP using credentials from .env in the project root.
+Listens on port 8001 and handles POST /mail.php.
+If SMTP credentials are configured in .env, sends real email.
+Otherwise, prints the email to console for local testing.
 
-If SMTP fails, falls back to logging the email to console
-so local development is not blocked by email configuration.
-
-Usage:
-  python3 local-mail-server.py
+Usage (auto-started by `npm run dev`):
+  python3 -u local-mail-server.py
 """
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -22,10 +19,11 @@ import json
 import os
 import smtplib
 import ssl
-import traceback
+import sys
 
 
 ENV_PATH = Path(__file__).resolve().parent / ".env"
+SEP = "─" * 72
 
 
 def load_env(path: Path) -> None:
@@ -56,50 +54,58 @@ MAIL_FROM = os.environ.get("MAIL_FROM", "configurador@industriasgalarza.com")
 MAIL_TO = os.environ.get("MAIL_TO", "services@juanmanavar.ro")
 
 
-def send_email(to: str, subject: str, body: str, reply_to: str | None = None) -> bool:
-    if not SMTP_HOST or not SMTP_PASS:
-        print(f"[mail-server] SMTP not configured. Logging email:")
-        print(f"  To: {to}")
-        print(f"  Subject: {subject}")
-        print(f"  Reply-To: {reply_to or '-'}")
-        print(f"  Body: {body[:500]}")
-        print(f"[mail-server] Email NOT sent (no SMTP credentials)")
-        return True
+def log(msg: str):
+    print(f"  {msg}", flush=True)
 
-    msg = EmailMessage()
-    msg["From"] = MAIL_FROM
-    msg["To"] = to
-    msg["Subject"] = subject
+
+def send_or_log(to: str, subject: str, body: str, reply_to: str | None = None):
+    print(f"\n{SEP}", flush=True)
+
+    if SMTP_HOST and SMTP_PASS:
+        msg = EmailMessage()
+        msg["From"] = MAIL_FROM
+        msg["To"] = to
+        msg["Subject"] = subject
+        if reply_to:
+            msg["Reply-To"] = reply_to
+        msg.set_content(body, charset="utf-8")
+
+        ctx = ssl.create_default_context()
+        try:
+            if SMTP_SECURE == "ssl":
+                with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=15) as s:
+                    s.login(SMTP_USER, SMTP_PASS)
+                    s.send_message(msg)
+            else:
+                with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
+                    s.starttls(context=ctx)
+                    s.login(SMTP_USER, SMTP_PASS)
+                    s.send_message(msg)
+            log(f"✓ Email sent to {to}")
+            print(SEP, flush=True)
+            return
+        except smtplib.SMTPAuthenticationError as e:
+            log(f"✗ SMTP AUTH FAILED: {e.smtp_code} {e.smtp_error.decode()}")
+            log(f"  Check SMTP_USER and SMTP_PASS in .env")
+        except Exception as e:
+            log(f"✗ SMTP ERROR: {e}")
+
+    log(f"✉ LOCAL EMAIL (not sent)")
+    log(f"  From:    {MAIL_FROM}")
+    log(f"  To:      {to}")
+    log(f"  Subject: {subject}")
     if reply_to:
-        msg["Reply-To"] = reply_to
-    msg.set_content(body, charset="utf-8")
-
-    ctx = ssl.create_default_context()
-    try:
-        if SMTP_SECURE == "ssl":
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=15) as server:
-                server.login(SMTP_USER, SMTP_PASS)
-                server.send_message(msg)
-        else:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
-                server.starttls(context=ctx)
-                server.login(SMTP_USER, SMTP_PASS)
-                server.send_message(msg)
-        print(f"[mail-server] Email sent to {to}")
-        return True
-    except Exception as e:
-        print(f"[mail-server] SMTP failed ({e}). Logging email to console:")
-        print(f"  To: {to}")
-        print(f"  Subject: {subject}")
-        print(f"  Reply-To: {reply_to or '-'}")
-        print(f"  Body: {body[:500]}")
-        print(f"[mail-server] Email NOT sent (SMTP error)")
-        return True
+        log(f"  Reply-To: {reply_to}")
+    log(f"  Body:")
+    for line in body.strip().splitlines():
+        log(f"    {line}")
+    log(f"  (No real email - configure SMTP in .env to send)")
+    print(SEP, flush=True)
 
 
 class MailHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
-        print(f"[mail-server] {args[0]} {args[1]} {args[2]}")
+        pass
 
     def _json(self, status: int, payload: dict):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -164,7 +170,8 @@ class MailHandler(BaseHTTPRequestHandler):
                 lines.append(f"{key}: {value}")
         internal_body = "\n".join(lines)
 
-        send_email(MAIL_TO, "Nuevo envío de formulario", internal_body, reply_to=email)
+        log(f"Processing quote from {name} <{email}> / {location}")
+        send_or_log(MAIL_TO, "Nuevo envío de formulario", internal_body, reply_to=email)
 
         user_body = "\n".join([
             f"Hola {name},",
@@ -181,7 +188,7 @@ class MailHandler(BaseHTTPRequestHandler):
             json.dumps(data.get("config", {}), ensure_ascii=False, indent=2),
         ])
 
-        send_email(email, "Hemos recibido tu configuración", user_body)
+        send_or_log(email, "Hemos recibido tu configuración", user_body)
 
         self._json(200, {"ok": True})
 
@@ -189,8 +196,10 @@ class MailHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     HOST = "localhost"
     PORT = 8001
-    print(f"🐍 Mail server on http://{HOST}:{PORT}/mail.php")
-    print(f"   SMTP: {SMTP_USER or 'not configured'} -> {MAIL_TO}")
-    if not SMTP_HOST or not SMTP_PASS:
-        print(f"   Mode: console logging (no SMTP credentials)")
+    if SMTP_HOST and SMTP_PASS:
+        print(f" Mail server on http://{HOST}:{PORT}/mail.php", flush=True)
+        print(f" SMTP: {SMTP_USER} -> {MAIL_TO} ({SMTP_HOST}:{SMTP_PORT})", flush=True)
+    else:
+        print(f" Mail server on http://{HOST}:{PORT}/mail.php", flush=True)
+        print(f" Mode: console logging (no SMTP credentials in .env)", flush=True)
     HTTPServer((HOST, PORT), MailHandler).serve_forever()
