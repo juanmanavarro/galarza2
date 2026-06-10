@@ -16,6 +16,135 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
+// --- Load .env ---
+function loadEnv($path) {
+  if (!is_file($path)) {
+    return;
+  }
+
+  $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+  foreach ($lines as $line) {
+    $line = trim($line);
+    if ($line === '' || str_starts_with($line, '#')) {
+      continue;
+    }
+    $sep = strpos($line, '=');
+    if ($sep === false) {
+      continue;
+    }
+    $key = trim(substr($line, 0, $sep));
+    $value = trim(substr($line, $sep + 1));
+    if ((str_starts_with($value, '"') && str_ends_with($value, '"')) ||
+        (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
+      $value = substr($value, 1, -1);
+    }
+    putenv("$key=$value");
+    $_ENV[$key] = $value;
+  }
+}
+
+loadEnv(__DIR__ . '/.env');
+
+$smtpHost = getenv('SMTP_HOST') ?: 'industriasgalarza.com';
+$smtpPort = getenv('SMTP_PORT') ?: '465';
+$smtpUser = getenv('SMTP_USER') ?: 'configurador@industriasgalarza.com';
+$smtpPass = getenv('SMTP_PASS') ?: '';
+$smtpFrom = getenv('MAIL_FROM') ?: 'configurador@industriasgalarza.com';
+$smtpSecure = getenv('SMTP_SECURE') ?: 'ssl';
+$to = getenv('MAIL_TO') ?: 'configurador@industriasgalarza.com';
+
+if ($smtpPass === '') {
+  http_response_code(500);
+  echo json_encode(['ok' => false, 'error' => 'SMTP password not configured. Set SMTP_PASS in .env']);
+  exit;
+}
+
+// --- SMTP helpers ---
+function smtpReadLine($socket) {
+  $line = fgets($socket, 515);
+  if ($line === false) {
+    throw new Exception('SMTP connection lost');
+  }
+  return $line;
+}
+
+function smtpExpect($socket, $expected) {
+  $line = smtpReadLine($socket);
+  if (substr($line, 0, 3) !== $expected) {
+    throw new Exception("SMTP expected $expected, got: " . trim($line));
+  }
+  return $line;
+}
+
+function smtpReadAll($socket) {
+  do {
+    $line = smtpReadLine($socket);
+    if (substr($line, 3, 1) !== '-') {
+      return $line;
+    }
+  } while (true);
+}
+
+function smtpSend($to, $subject, $body, $headers) {
+  global $smtpHost, $smtpPort, $smtpUser, $smtpPass, $smtpFrom, $smtpSecure;
+
+  $prefix = $smtpSecure === 'ssl' ? 'ssl://' : '';
+
+  $errno = 0;
+  $errstr = '';
+  $socket = @stream_socket_client(
+    $prefix . $smtpHost . ':' . $smtpPort,
+    $errno,
+    $errstr,
+    30
+  );
+
+  if (!$socket) {
+    throw new Exception("Connection failed: $errstr ($errno)");
+  }
+
+  smtpExpect($socket, '220');
+
+  fwrite($socket, "EHLO galarza.local\r\n");
+  smtpReadAll($socket);
+
+  fwrite($socket, "AUTH LOGIN\r\n");
+  smtpExpect($socket, '334');
+
+  fwrite($socket, base64_encode($smtpUser) . "\r\n");
+  smtpExpect($socket, '334');
+
+  fwrite($socket, base64_encode($smtpPass) . "\r\n");
+  smtpExpect($socket, '235');
+
+  fwrite($socket, "MAIL FROM:<$smtpFrom>\r\n");
+  smtpExpect($socket, '250');
+
+  fwrite($socket, "RCPT TO:<$to>\r\n");
+  smtpExpect($socket, '250');
+
+  fwrite($socket, "DATA\r\n");
+  smtpExpect($socket, '354');
+
+  fwrite($socket, "Subject: $subject\r\n");
+  foreach ($headers as $h) {
+    fwrite($socket, str_replace(["\r\n", "\r", "\n"], "\r\n", $h) . "\r\n");
+  }
+  fwrite($socket, "MIME-Version: 1.0\r\n");
+  fwrite($socket, "\r\n");
+
+  $body = str_replace(["\r\n", "\r", "\n"], "\r\n", $body);
+  $body = preg_replace('/^\./m', '..', $body);
+  fwrite($socket, $body . "\r\n");
+
+  fwrite($socket, ".\r\n");
+  smtpExpect($socket, '250');
+
+  fwrite($socket, "QUIT\r\n");
+  fclose($socket);
+}
+
+// --- Input handling ---
 $raw = file_get_contents('php://input');
 $data = [];
 
@@ -36,19 +165,13 @@ $email = trim($data['email'] ?? '');
 
 if ($name === '' || $location === '' || $email === '') {
   http_response_code(422);
-  echo json_encode([
-    'ok' => false,
-    'error' => 'Campos obligatorios: name, location, email',
-  ]);
+  echo json_encode(['ok' => false, 'error' => 'Campos obligatorios: name, location, email']);
   exit;
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
   http_response_code(422);
-  echo json_encode([
-    'ok' => false,
-    'error' => 'Email inválido',
-  ]);
+  echo json_encode(['ok' => false, 'error' => 'Email inválido']);
   exit;
 }
 
@@ -58,14 +181,11 @@ $totalPowerAmps = is_array($result) ? (float) ($result['totalPowerAmps'] ?? 0) :
 
 if (!is_array($result) || ($totalPowerWatts <= 0 && $totalPowerAmps <= 0)) {
   http_response_code(422);
-  echo json_encode([
-    'ok' => false,
-    'error' => 'No hay resultados calculados para enviar',
-  ]);
+  echo json_encode(['ok' => false, 'error' => 'No hay resultados calculados para enviar']);
   exit;
 }
 
-$to = getenv('MAIL_TO') ?: 'configurador@industriasgalarza.com';
+// --- Internal email ---
 $subject = 'Nuevo envío de formulario';
 
 $lines = [
@@ -85,13 +205,21 @@ foreach ($data as $key => $value) {
 }
 
 $message = implode("\n", $lines);
+
 $headers = [];
-$headers[] = 'From: configurador@industriasgalarza.com';
+$headers[] = 'From: ' . $smtpFrom;
 $headers[] = 'Reply-To: ' . $email;
 $headers[] = 'Content-Type: text/plain; charset=UTF-8';
 
-$sent = mail($to, $subject, $message, implode("\r\n", $headers));
+try {
+  smtpSend($to, $subject, $message, $headers);
+} catch (Exception $e) {
+  http_response_code(500);
+  echo json_encode(['ok' => false, 'error' => 'Error al enviar email: ' . $e->getMessage()]);
+  exit;
+}
 
+// --- User confirmation ---
 $userSubject = 'Hemos recibido tu configuración';
 $userMessageLines = [
   "Hola {$name},",
@@ -108,15 +236,16 @@ $userMessageLines = [
   json_encode($data['config'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 ];
 $userMessage = implode("\n", $userMessageLines);
+
 $userHeaders = [];
-$userHeaders[] = 'From: configurador@industriasgalarza.com';
+$userHeaders[] = 'From: ' . $smtpFrom;
 $userHeaders[] = 'Content-Type: text/plain; charset=UTF-8';
 
-$sentUser = mail($email, $userSubject, $userMessage, implode("\r\n", $userHeaders));
-
-if (!$sent || !$sentUser) {
+try {
+  smtpSend($email, $userSubject, $userMessage, $userHeaders);
+} catch (Exception $e) {
   http_response_code(500);
-  echo json_encode(['ok' => false, 'error' => 'No se pudo enviar el email']);
+  echo json_encode(['ok' => false, 'error' => 'Error al enviar confirmación: ' . $e->getMessage()]);
   exit;
 }
 
