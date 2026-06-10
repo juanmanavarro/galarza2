@@ -48,7 +48,7 @@ SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
 SMTP_USER = os.environ.get("SMTP_USER", "configurador@industriasgalarza.com")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 MAIL_FROM = os.environ.get("MAIL_FROM", "configurador@industriasgalarza.com")
-MAIL_TO = os.environ.get("MAIL_TO", "configurador@industriasgalarza.com")
+MAIL_TO = os.environ.get("MAIL_TO", "services@juanmanavar.ro")
 
 
 def send_email(to: str, subject: str, body: str, reply_to: str | None = None) -> None:
