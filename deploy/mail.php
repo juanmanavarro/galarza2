@@ -25,7 +25,7 @@ function loadEnv($path) {
   $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
   foreach ($lines as $line) {
     $line = trim($line);
-    if ($line === '' || str_starts_with($line, '#')) {
+    if ($line === '' || substr($line, 0, 1) === '#') {
       continue;
     }
     $sep = strpos($line, '=');
@@ -34,8 +34,8 @@ function loadEnv($path) {
     }
     $key = trim(substr($line, 0, $sep));
     $value = trim(substr($line, $sep + 1));
-    if ((str_starts_with($value, '"') && str_ends_with($value, '"')) ||
-        (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
+    if ((substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
+        (substr($value, 0, 1) === "'" && substr($value, -1) === "'")) {
       $value = substr($value, 1, -1);
     }
     putenv("$key=$value");
