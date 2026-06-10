@@ -50,7 +50,7 @@ $smtpPort = getenv('SMTP_PORT') ?: '465';
 $smtpUser = getenv('SMTP_USER') ?: 'configurador@industriasgalarza.com';
 $smtpPass = getenv('SMTP_PASS') ?: '';
 $smtpFrom = getenv('MAIL_FROM') ?: 'configurador@industriasgalarza.com';
-$smtpSecure = getenv('SMTP_SECURE') ?: 'ssl';
+$smtpSecure = getenv('SMTP_SECURE') ?: 'tls';
 $to = getenv('MAIL_TO') ?: 'configurador@industriasgalarza.com';
 
 if ($smtpPass === '') {
@@ -107,6 +107,17 @@ function smtpSend($to, $subject, $body, $headers) {
 
   fwrite($socket, "EHLO galarza.local\r\n");
   smtpReadAll($socket);
+
+  if ($smtpSecure === 'tls') {
+    fwrite($socket, "STARTTLS\r\n");
+    smtpExpect($socket, '220');
+    $crypto = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
+    if (!$crypto) {
+      throw new Exception('STARTTLS negotiation failed');
+    }
+    fwrite($socket, "EHLO galarza.local\r\n");
+    smtpReadAll($socket);
+  }
 
   fwrite($socket, "AUTH LOGIN\r\n");
   smtpExpect($socket, '334');

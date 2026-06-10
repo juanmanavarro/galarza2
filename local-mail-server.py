@@ -44,7 +44,8 @@ def load_env(path: Path) -> None:
 load_env(ENV_PATH)
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "industriasgalarza.com")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_SECURE = os.environ.get("SMTP_SECURE", "tls")
 SMTP_USER = os.environ.get("SMTP_USER", "configurador@industriasgalarza.com")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 MAIL_FROM = os.environ.get("MAIL_FROM", "configurador@industriasgalarza.com")
@@ -64,9 +65,15 @@ def send_email(to: str, subject: str, body: str, reply_to: str | None = None) ->
     msg.set_content(body, charset="utf-8")
 
     ctx = ssl.create_default_context()
-    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=30) as server:
-        server.login(SMTP_USER, SMTP_PASS)
-        server.send_message(msg)
+    if SMTP_SECURE == "ssl":
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=30) as server:
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+    else:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+            server.starttls(context=ctx)
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
 
 
 class MailHandler(BaseHTTPRequestHandler):
