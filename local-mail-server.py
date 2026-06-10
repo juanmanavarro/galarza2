@@ -7,6 +7,9 @@ Replaces the PHP mail.php endpoint when running locally.
 Listens on port 8001 and handles POST /mail.php by sending
 email via SMTP using credentials from .env in the project root.
 
+If SMTP fails, falls back to logging the email to console
+so local development is not blocked by email configuration.
+
 Usage:
   python3 local-mail-server.py
 """
@@ -19,6 +22,7 @@ import json
 import os
 import smtplib
 import ssl
+import traceback
 
 
 ENV_PATH = Path(__file__).resolve().parent / ".env"
@@ -43,18 +47,24 @@ def load_env(path: Path) -> None:
 
 load_env(ENV_PATH)
 
-SMTP_HOST = os.environ.get("SMTP_HOST", "industriasgalarza.com")
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_SECURE = os.environ.get("SMTP_SECURE", "tls")
-SMTP_USER = os.environ.get("SMTP_USER", "configurador@industriasgalarza.com")
+SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 MAIL_FROM = os.environ.get("MAIL_FROM", "configurador@industriasgalarza.com")
 MAIL_TO = os.environ.get("MAIL_TO", "services@juanmanavar.ro")
 
 
-def send_email(to: str, subject: str, body: str, reply_to: str | None = None) -> None:
-    if not SMTP_PASS:
-        raise RuntimeError("SMTP_PASS not set. Add SMTP_PASS to .env")
+def send_email(to: str, subject: str, body: str, reply_to: str | None = None) -> bool:
+    if not SMTP_HOST or not SMTP_PASS:
+        print(f"[mail-server] SMTP not configured. Logging email:")
+        print(f"  To: {to}")
+        print(f"  Subject: {subject}")
+        print(f"  Reply-To: {reply_to or '-'}")
+        print(f"  Body: {body[:500]}")
+        print(f"[mail-server] Email NOT sent (no SMTP credentials)")
+        return True
 
     msg = EmailMessage()
     msg["From"] = MAIL_FROM
@@ -65,15 +75,26 @@ def send_email(to: str, subject: str, body: str, reply_to: str | None = None) ->
     msg.set_content(body, charset="utf-8")
 
     ctx = ssl.create_default_context()
-    if SMTP_SECURE == "ssl":
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=30) as server:
-            server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
-    else:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
-            server.starttls(context=ctx)
-            server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
+    try:
+        if SMTP_SECURE == "ssl":
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=15) as server:
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+                server.starttls(context=ctx)
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
+        print(f"[mail-server] Email sent to {to}")
+        return True
+    except Exception as e:
+        print(f"[mail-server] SMTP failed ({e}). Logging email to console:")
+        print(f"  To: {to}")
+        print(f"  Subject: {subject}")
+        print(f"  Reply-To: {reply_to or '-'}")
+        print(f"  Body: {body[:500]}")
+        print(f"[mail-server] Email NOT sent (SMTP error)")
+        return True
 
 
 class MailHandler(BaseHTTPRequestHandler):
@@ -137,14 +158,13 @@ class MailHandler(BaseHTTPRequestHandler):
         for key, value in data.items():
             if key in ("name", "location", "email"):
                 continue
-            lines.append(f"{key}: {json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else value}")
+            if isinstance(value, (dict, list)):
+                lines.append(f"{key}: {json.dumps(value, ensure_ascii=False)}")
+            else:
+                lines.append(f"{key}: {value}")
         internal_body = "\n".join(lines)
 
-        try:
-            send_email(MAIL_TO, "Nuevo envío de formulario", internal_body, reply_to=email)
-        except Exception as e:
-            self._json(500, {"ok": False, "error": f"Error al enviar email: {e}"})
-            return
+        send_email(MAIL_TO, "Nuevo envío de formulario", internal_body, reply_to=email)
 
         user_body = "\n".join([
             f"Hola {name},",
@@ -161,11 +181,7 @@ class MailHandler(BaseHTTPRequestHandler):
             json.dumps(data.get("config", {}), ensure_ascii=False, indent=2),
         ])
 
-        try:
-            send_email(email, "Hemos recibido tu configuración", user_body)
-        except Exception as e:
-            self._json(500, {"ok": False, "error": f"Error al enviar confirmación: {e}"})
-            return
+        send_email(email, "Hemos recibido tu configuración", user_body)
 
         self._json(200, {"ok": True})
 
@@ -173,5 +189,8 @@ class MailHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     HOST = "localhost"
     PORT = 8001
-    print(f"🐍 Mail server listening on http://{HOST}:{PORT}/mail.php")
+    print(f"🐍 Mail server on http://{HOST}:{PORT}/mail.php")
+    print(f"   SMTP: {SMTP_USER or 'not configured'} -> {MAIL_TO}")
+    if not SMTP_HOST or not SMTP_PASS:
+        print(f"   Mode: console logging (no SMTP credentials)")
     HTTPServer((HOST, PORT), MailHandler).serve_forever()

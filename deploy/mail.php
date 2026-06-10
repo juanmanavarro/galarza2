@@ -16,7 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-// --- Load .env ---
 function loadEnv($path) {
   if (!is_file($path)) {
     return;
@@ -45,21 +44,54 @@ function loadEnv($path) {
 
 loadEnv(__DIR__ . '/.env');
 
-$smtpHost = getenv('SMTP_HOST') ?: 'industriasgalarza.com';
-$smtpPort = getenv('SMTP_PORT') ?: '465';
-$smtpUser = getenv('SMTP_USER') ?: 'configurador@industriasgalarza.com';
-$smtpPass = getenv('SMTP_PASS') ?: '';
 $smtpFrom = getenv('MAIL_FROM') ?: 'configurador@industriasgalarza.com';
-$smtpSecure = getenv('SMTP_SECURE') ?: 'tls';
 $to = getenv('MAIL_TO') ?: 'configurador@industriasgalarza.com';
 
-if ($smtpPass === '') {
-  http_response_code(500);
-  echo json_encode(['ok' => false, 'error' => 'SMTP password not configured. Set SMTP_PASS in .env']);
+$raw = file_get_contents('php://input');
+$data = [];
+
+if (!empty($raw)) {
+  $decoded = json_decode($raw, true);
+  if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+    $data = $decoded;
+  }
+}
+
+if (empty($data)) {
+  $data = $_POST ?? [];
+}
+
+$name = trim($data['name'] ?? '');
+$location = trim($data['location'] ?? '');
+$email = trim($data['email'] ?? '');
+
+if ($name === '' || $location === '' || $email === '') {
+  http_response_code(422);
+  echo json_encode(['ok' => false, 'error' => 'Campos obligatorios: name, location, email']);
   exit;
 }
 
-// --- SMTP helpers ---
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+  http_response_code(422);
+  echo json_encode(['ok' => false, 'error' => 'Email inválido']);
+  exit;
+}
+
+$result = $data['result'] ?? null;
+$totalPowerWatts = is_array($result) ? (float) ($result['totalPowerWatts'] ?? 0) : 0;
+$totalPowerAmps = is_array($result) ? (float) ($result['totalPowerAmps'] ?? 0) : 0;
+
+if (!is_array($result) || ($totalPowerWatts <= 0 && $totalPowerAmps <= 0)) {
+  http_response_code(422);
+  echo json_encode(['ok' => false, 'error' => 'No hay resultados calculados para enviar']);
+  exit;
+}
+
+function sendViaMail($to, $subject, $message, $headersArray) {
+  $headersStr = implode("\r\n", $headersArray);
+  return mail($to, $subject, $message, $headersStr);
+}
+
 function smtpReadLine($socket) {
   $line = fgets($socket, 515);
   if ($line === false) {
@@ -85,8 +117,17 @@ function smtpReadAll($socket) {
   } while (true);
 }
 
-function smtpSend($to, $subject, $body, $headers) {
-  global $smtpHost, $smtpPort, $smtpUser, $smtpPass, $smtpFrom, $smtpSecure;
+function sendViaSmtp($to, $subject, $body, $headers) {
+  $smtpHost = getenv('SMTP_HOST') ?: 'smtp.office365.com';
+  $smtpPort = getenv('SMTP_PORT') ?: '587';
+  $smtpUser = getenv('SMTP_USER') ?: 'configurador@industriasgalarza.com';
+  $smtpPass = getenv('SMTP_PASS') ?: '';
+  $smtpFrom = getenv('MAIL_FROM') ?: 'configurador@industriasgalarza.com';
+  $smtpSecure = getenv('SMTP_SECURE') ?: 'tls';
+
+  if ($smtpPass === '') {
+    throw new Exception('SMTP_PASS not configured');
+  }
 
   $prefix = $smtpSecure === 'ssl' ? 'ssl://' : '';
 
@@ -96,7 +137,7 @@ function smtpSend($to, $subject, $body, $headers) {
     $prefix . $smtpHost . ':' . $smtpPort,
     $errno,
     $errstr,
-    30
+    15
   );
 
   if (!$socket) {
@@ -155,47 +196,6 @@ function smtpSend($to, $subject, $body, $headers) {
   fclose($socket);
 }
 
-// --- Input handling ---
-$raw = file_get_contents('php://input');
-$data = [];
-
-if (!empty($raw)) {
-  $decoded = json_decode($raw, true);
-  if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-    $data = $decoded;
-  }
-}
-
-if (empty($data)) {
-  $data = $_POST ?? [];
-}
-
-$name = trim($data['name'] ?? '');
-$location = trim($data['location'] ?? '');
-$email = trim($data['email'] ?? '');
-
-if ($name === '' || $location === '' || $email === '') {
-  http_response_code(422);
-  echo json_encode(['ok' => false, 'error' => 'Campos obligatorios: name, location, email']);
-  exit;
-}
-
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-  http_response_code(422);
-  echo json_encode(['ok' => false, 'error' => 'Email inválido']);
-  exit;
-}
-
-$result = $data['result'] ?? null;
-$totalPowerWatts = is_array($result) ? (float) ($result['totalPowerWatts'] ?? 0) : 0;
-$totalPowerAmps = is_array($result) ? (float) ($result['totalPowerAmps'] ?? 0) : 0;
-
-if (!is_array($result) || ($totalPowerWatts <= 0 && $totalPowerAmps <= 0)) {
-  http_response_code(422);
-  echo json_encode(['ok' => false, 'error' => 'No hay resultados calculados para enviar']);
-  exit;
-}
-
 // --- Internal email ---
 $subject = 'Nuevo envío de formulario';
 
@@ -222,12 +222,26 @@ $headers[] = 'From: ' . $smtpFrom;
 $headers[] = 'Reply-To: ' . $email;
 $headers[] = 'Content-Type: text/plain; charset=UTF-8';
 
-try {
-  smtpSend($to, $subject, $message, $headers);
-} catch (Exception $e) {
-  http_response_code(500);
-  echo json_encode(['ok' => false, 'error' => 'Error al enviar email: ' . $e->getMessage()]);
-  exit;
+$smtpSent = false;
+$smtpError = '';
+
+if (getenv('SMTP_PASS')) {
+  try {
+    sendViaSmtp($to, $subject, $message, $headers);
+    $smtpSent = true;
+  } catch (Exception $e) {
+    $smtpError = $e->getMessage();
+  }
+}
+
+if (!$smtpSent) {
+  $sent = sendViaMail($to, $subject, $message, $headers);
+  if (!$sent) {
+    http_response_code(500);
+    $detail = $smtpError ? "SMTP: $smtpError / mail(): failed" : 'mail() function returned false';
+    echo json_encode(['ok' => false, 'error' => 'Error al enviar email: ' . $detail]);
+    exit;
+  }
 }
 
 // --- User confirmation ---
@@ -252,12 +266,26 @@ $userHeaders = [];
 $userHeaders[] = 'From: ' . $smtpFrom;
 $userHeaders[] = 'Content-Type: text/plain; charset=UTF-8';
 
-try {
-  smtpSend($email, $userSubject, $userMessage, $userHeaders);
-} catch (Exception $e) {
-  http_response_code(500);
-  echo json_encode(['ok' => false, 'error' => 'Error al enviar confirmación: ' . $e->getMessage()]);
-  exit;
+$smtpSent = false;
+$smtpError = '';
+
+if (getenv('SMTP_PASS')) {
+  try {
+    sendViaSmtp($email, $userSubject, $userMessage, $userHeaders);
+    $smtpSent = true;
+  } catch (Exception $e) {
+    $smtpError = $e->getMessage();
+  }
+}
+
+if (!$smtpSent) {
+  $sent = sendViaMail($email, $userSubject, $userMessage, $userHeaders);
+  if (!$sent) {
+    http_response_code(500);
+    $detail = $smtpError ? "SMTP: $smtpError / mail(): failed" : 'mail() function returned false';
+    echo json_encode(['ok' => false, 'error' => 'Error al enviar confirmación: ' . $detail]);
+    exit;
+  }
 }
 
 echo json_encode(['ok' => true]);
